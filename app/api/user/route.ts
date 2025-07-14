@@ -21,12 +21,13 @@ export async function POST(request: Request) {
 		return Response.json({ error: 'Not authenticated' }, { status: 401 })
 	}
 
-	// Check if user is super admin
+	// Check if user is super admin or admin
 	const isSuperAdmin = user.role === 'super_admin'
+	const isAdmin = user.role === 'admin'
 
 	// Check if user is a member of the team
 	let isMember = false
-	if (!isSuperAdmin) {
+	if (!isSuperAdmin && !isAdmin) {
 		const membership = await db
 			.select()
 			.from(teamMembers)
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
 		isMember = membership.length > 0
 	}
 
-	if (!isSuperAdmin && !isMember) {
+	if (!isSuperAdmin && !isAdmin && !isMember) {
 		return Response.json({ error: 'Not authorized for this team' }, { status: 403 })
 	}
 

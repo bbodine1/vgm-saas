@@ -1,94 +1,44 @@
-'use client'
+import React from 'react'
 
-import { useState, useTransition } from 'react'
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table'
-
-interface PendingInvitationsTableProps {
+type PendingInvitationsTableProps = {
 	pendingInvitations: any[]
 	isOwnerOrSuperAdmin: boolean
+	registeredUserEmails: string[]
 }
 
-export default function PendingInvitationsTable({
+const PendingInvitationsTable: React.FC<PendingInvitationsTableProps> = ({
 	pendingInvitations,
 	isOwnerOrSuperAdmin,
-}: PendingInvitationsTableProps) {
-	const [feedback, setFeedback] = useState<string | null>(null)
-	const [isPending, startTransition] = useTransition()
-
-	async function approveInvitationAction(formData: FormData) {
-		const invitationId = Number(formData.get('invitationId'))
-		// Call the server action via fetch (API route or server action endpoint)
-		const res = await fetch('/api/approve-invitation', {
-			method: 'POST',
-			body: JSON.stringify({ invitationId }),
-			headers: { 'Content-Type': 'application/json' },
-		})
-		const data = await res.json()
-		if (data.success) {
-			setFeedback('Invitation approved successfully.')
-			startTransition(() => window.location.reload())
-		} else {
-			setFeedback('Failed to approve invitation. Make sure the invited user has registered.')
-		}
+	registeredUserEmails,
+}) => {
+	if (!pendingInvitations || pendingInvitations.length === 0) {
+		return <div className="mt-4 text-gray-500">No pending invitations.</div>
 	}
-
-	if (!pendingInvitations.length) return null
-
 	return (
-		<div className="mt-8">
-			<h2 className="text-lg font-semibold mb-2">Pending Invitations</h2>
-			<Table>
-				<TableHeader>
-					<TableRow className="bg-gray-100">
-						<TableHead>Email</TableHead>
-						<TableHead>Role</TableHead>
-						<TableHead>Status</TableHead>
-						<TableHead>Invited At</TableHead>
-						{isOwnerOrSuperAdmin && <TableHead>Action</TableHead>}
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{pendingInvitations.map(invite => (
-						<TableRow
-							key={invite.id}
-							className="border-t"
-						>
-							<TableCell>{invite.email}</TableCell>
-							<TableCell className="capitalize">{invite.role}</TableCell>
-							<TableCell>Pending</TableCell>
-							<TableCell>{new Date(invite.invitedAt).toLocaleDateString()}</TableCell>
-							{isOwnerOrSuperAdmin && (
-								<TableCell>
-									<form
-										action={approveInvitationAction}
-										onSubmit={e => {
-											e.preventDefault()
-											const form = e.currentTarget as HTMLFormElement
-											approveInvitationAction(new FormData(form))
-										}}
-									>
-										<input
-											type="hidden"
-											name="invitationId"
-											value={invite.id}
-										/>
-										<button
-											type="submit"
-											className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-											disabled={isPending}
-										>
-											{isPending ? 'Approving...' : 'Approve'}
-										</button>
-									</form>
-								</TableCell>
-							)}
-						</TableRow>
+		<div className="mt-6">
+			<h2 className="font-semibold mb-2">Pending Invitations</h2>
+			<table className="min-w-full text-sm">
+				<thead>
+					<tr>
+						<th>Email</th>
+						<th>Role</th>
+						<th>Status</th>
+						{isOwnerOrSuperAdmin && <th>Action</th>}
+					</tr>
+				</thead>
+				<tbody>
+					{pendingInvitations.map((invite, idx) => (
+						<tr key={idx}>
+							<td>{invite.email}</td>
+							<td>{invite.role}</td>
+							<td>{invite.status}</td>
+							{isOwnerOrSuperAdmin && <td>--</td>}
+						</tr>
 					))}
-				</TableBody>
-			</Table>
-			{feedback && (
-				<p className={`mt-4 text-sm ${feedback.includes('success') ? 'text-green-600' : 'text-red-600'}`}>{feedback}</p>
-			)}
+				</tbody>
+			</table>
 		</div>
 	)
 }
+
+export default PendingInvitationsTable

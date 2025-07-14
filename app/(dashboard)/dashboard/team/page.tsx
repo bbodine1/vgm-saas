@@ -182,7 +182,7 @@ function InviteTeamMemberSkeleton() {
 
 function InviteTeamMember() {
 	const { data: user } = useSWR<User>('/api/user', fetcher)
-	const isOwnerOrSuperAdmin = user?.role === 'owner' || user?.role === 'super_admin'
+	const isOwnerOrSuperAdmin = user?.role === 'owner' || user?.role === 'super_admin' || user?.role === 'admin'
 	const [inviteState, inviteAction, isInvitePending] = useActionState<ActionState, FormData>(inviteTeamMember, {})
 
 	return (
@@ -259,7 +259,7 @@ function InviteTeamMember() {
 			{!isOwnerOrSuperAdmin && (
 				<CardFooter>
 					<p className="text-sm text-muted-foreground">
-						You must be a team owner or super admin to invite new members.
+						You must be a team owner, admin, or super admin to invite new members.
 					</p>
 				</CardFooter>
 			)}

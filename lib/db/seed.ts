@@ -5,8 +5,6 @@ import { hashPassword } from '@/lib/auth/session'
 import { eq } from 'drizzle-orm'
 
 async function createStripeProducts() {
-	console.log('Creating Stripe products and prices...')
-
 	const baseProduct = await stripe.products.create({
 		name: 'Base',
 		description: 'Base subscription plan',
@@ -36,8 +34,6 @@ async function createStripeProducts() {
 			trial_period_days: 7,
 		},
 	})
-
-	console.log('Stripe products and prices created successfully.')
 }
 
 async function seed() {
@@ -62,10 +58,8 @@ async function seed() {
 				},
 			])
 			.returning()
-		console.log('Initial user created.')
 	} else {
 		user = existingOwner[0]
-		console.log('Initial user already exists.')
 	}
 
 	// Ensure unique org name and valid length
@@ -82,10 +76,8 @@ async function seed() {
 				name: orgName,
 			})
 			.returning()
-		console.log('Initial team created.')
 	} else {
 		team = existingTeam[0]
-		console.log('Initial team already exists.')
 	}
 
 	// Associate user with team
@@ -96,9 +88,6 @@ async function seed() {
 			userId: user.id,
 			role: 'owner',
 		})
-		console.log('User associated with team.')
-	} else {
-		console.log('User already associated with team.')
 	}
 
 	// Check if the super admin user exists
@@ -116,9 +105,22 @@ async function seed() {
 				},
 			])
 			.returning()
-		console.log('Super admin user created.')
-	} else {
-		console.log('Super admin user already exists.')
+	}
+
+	// Add an admin user (same privileges as super admin except cannot update/delete super admins)
+	const adminEmail = 'admin@test.com'
+	const existingAdmin = await db.select().from(users).where(eq(users.email, adminEmail)).limit(1)
+	if (existingAdmin.length === 0) {
+		await db
+			.insert(users)
+			.values([
+				{
+					email: adminEmail,
+					passwordHash: await hashPassword('admin123'),
+					role: 'admin',
+				},
+			])
+			.returning()
 	}
 
 	await createStripeProducts()

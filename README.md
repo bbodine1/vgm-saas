@@ -60,6 +60,9 @@ This will create the following users and team:
 - Super Admin: `superadmin@test.com` (not associated with any organization)
 - Password: `superadmin123`
 
+- Admin: `admin@test.com` (not associated with any organization)
+- Password: `admin123`
+
 You can also create new users through the `/sign-up` route.
 
 ## Organization Requirements
@@ -67,6 +70,15 @@ You can also create new users through the `/sign-up` route.
 When signing up, users must name the organization (team) they are creating. The organization name must be unique, between 4 and 20 characters. All users must be associated with at least one organization, except users with the role of admin or super admin.
 
 You can also create new users through the `/sign-up` route. The sign-up form will require an organization name that meets the above requirements.
+
+## Roles
+
+- **Owner**: Full rights within their organization. Can manage members and settings for their org.
+- **Member**: Default for invited users. View-only rights within their organization.
+- **Admin**: Global admin. Has all privileges of Super Admin except cannot update or delete Super Admin users. Not associated with any organization.
+- **Super Admin**: Application administrator. Full rights to all organizations and users. Not associated with any organization.
+
+**Note:** Only users with the "owner", "admin", or "super_admin" roles can manage organizations. Only "super_admin" can update or delete other super admins.
 
 Finally, run the Next.js development server:
 

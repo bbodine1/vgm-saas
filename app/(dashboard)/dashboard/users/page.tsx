@@ -32,12 +32,13 @@ export default async function UsersPage() {
 	const currentMembership = team.teamMembers.find(member => member.user.id === currentUser.id)
 
 	const isSuperAdmin = currentUser.role === 'super_admin'
-	const isOwnerOrSuperAdmin = isSuperAdmin || (currentMembership && currentMembership.role === 'owner')
+	const isAdmin = currentUser.role === 'admin'
+	const isOwnerOrSuperAdmin = isSuperAdmin || isAdmin || (currentMembership && currentMembership.role === 'owner')
 
 	if (!isOwnerOrSuperAdmin) {
 		return (
 			<div className="text-red-500">
-				Access denied. You must be an owner or super admin to view this page.
+				Access denied. You must be an owner, admin, or super admin to view this page.
 				<br />
 				Debug: user={JSON.stringify(currentUser)} team={JSON.stringify(team)} membership=
 				{JSON.stringify(currentMembership)}
@@ -92,13 +93,6 @@ export default async function UsersPage() {
 					/>
 				</CardContent>
 			</Card>
-			<div className="mt-4 text-xs text-gray-400">
-				Debug: user={JSON.stringify(currentUser)}
-				<br />
-				team={JSON.stringify(team)}
-				<br />
-				membership={JSON.stringify(currentMembership)}
-			</div>
 		</section>
 	)
 }

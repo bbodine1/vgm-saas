@@ -108,24 +108,15 @@ function UserMenu() {
 }
 
 function Header() {
-	const { data: allTeams, isLoading, error: teamsError } = useSWR('/api/team', fetcher)
+	const { data: allTeamsRaw, isLoading, error: teamsError } = useSWR('/api/team', fetcher)
+	const allTeams = Array.isArray(allTeamsRaw) ? allTeamsRaw : []
 	const { data: userData } = useSWR('/api/user', fetcher)
 	const activeTeamId = userData?.activeTeamId
-	const team =
-		allTeams && Array.isArray(allTeams) && allTeams.length > 0
-			? allTeams.find((t: any) => t.id === activeTeamId) || allTeams[0]
-			: null
+	const team = allTeams && allTeams.length > 0 ? allTeams.find((t: any) => t.id === activeTeamId) || allTeams[0] : null
 	const router = useRouter()
 	const [isPending, startTransition] = useTransition()
 
-	// Debug logs
-	console.log('allTeams:', allTeams)
-	console.log('Combobox options:', allTeams ? allTeams.map((t: any) => ({ value: t.id, label: t.name })) : [])
-	console.log('Combobox value:', team ? team.id : null)
-	console.log('activeTeamId:', activeTeamId)
-
 	async function handleSwitchTeam(value: string | number) {
-		console.log('Switching to team:', value)
 		const teamId = typeof value === 'string' ? parseInt(value, 10) : value
 		await fetch('/api/user', {
 			method: 'POST',

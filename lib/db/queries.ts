@@ -4,6 +4,7 @@ import { activityLogs, teamMembers, teams, users, invitations } from './schema'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth/session'
 import { getSession } from '@/lib/auth/session'
+import type { User } from './schema'
 
 export async function getUser() {
 	const sessionCookie = (await cookies()).get('session')
@@ -107,11 +108,12 @@ export async function getActiveTeam() {
 		.limit(1)
 	if (user.length === 0) return null
 	const isSuperAdmin = user[0].role === 'super_admin'
+	const isAdmin = user[0].role === 'admin'
 
 	if (!activeTeamId) return null
 
-	// If super admin, allow any team
-	if (isSuperAdmin) {
+	// If super admin or admin, allow any team
+	if (isSuperAdmin || isAdmin) {
 		const team = await db.select().from(teams).where(eq(teams.id, activeTeamId)).limit(1)
 		return team.length > 0 ? team[0] : null
 	}
@@ -141,10 +143,11 @@ export async function getTeamForUser() {
 		.limit(1)
 	if (user.length === 0) return null
 	const isSuperAdmin = user[0].role === 'super_admin'
+	const isAdmin = user[0].role === 'admin'
 
 	if (activeTeamId) {
-		if (isSuperAdmin) {
-			// Super admin: allow any team by ID
+		if (isSuperAdmin || isAdmin) {
+			// Super admin or admin: allow any team by ID
 			const team = await db.query.teams.findFirst({
 				where: eq(teams.id, activeTeamId),
 				with: {
@@ -212,7 +215,7 @@ export async function getTeamForUser() {
 	return result?.team || null
 }
 
-// Returns all teams for the current user, or all teams if super admin
+// Returns all teams for the current user, or all teams if super admin or admin
 export async function getAllTeamsForUser() {
 	const session = await getSession()
 	if (!session || !session.user) return []
@@ -226,8 +229,9 @@ export async function getAllTeamsForUser() {
 		.limit(1)
 	if (user.length === 0) return []
 	const isSuperAdmin = user[0].role === 'super_admin'
+	const isAdmin = user[0].role === 'admin'
 
-	if (isSuperAdmin) {
+	if (isSuperAdmin || isAdmin) {
 		// Return all teams
 		return await db.select().from(teams)
 	}
@@ -270,4 +274,11 @@ export async function approveInvitation(invitationId: number) {
 		await db.insert(teamMembers).values({ userId: user.id, teamId: invite.teamId, role: invite.role })
 	}
 	return true
+}
+
+// Helper: can currentUser manage (update/delete) targetUser's role?
+export function canManageUserRoles(currentUser: User, targetUser: User): boolean {
+	if (currentUser.role === 'super_admin') return true
+	if (currentUser.role === 'admin' && targetUser.role !== 'super_admin') return true
+	return false
 }
