@@ -57,6 +57,8 @@ This will create the following user and team:
 
 - User: `test@test.com`
 - Password: `admin123`
+- Super Admin: `superadmin@test.com`
+- Password: `superadmin123`
 
 You can also create new users through the `/sign-up` route.
 

@@ -182,7 +182,7 @@ function InviteTeamMemberSkeleton() {
 
 function InviteTeamMember() {
 	const { data: user } = useSWR<User>('/api/user', fetcher)
-	const isOwner = user?.role === 'owner'
+	const isOwnerOrSuperAdmin = user?.role === 'owner' || user?.role === 'super_admin'
 	const [inviteState, inviteAction, isInvitePending] = useActionState<ActionState, FormData>(inviteTeamMember, {})
 
 	return (
@@ -208,7 +208,7 @@ function InviteTeamMember() {
 							type="email"
 							placeholder="Enter email"
 							required
-							disabled={!isOwner}
+							disabled={!isOwnerOrSuperAdmin}
 						/>
 					</div>
 					<div>
@@ -217,7 +217,7 @@ function InviteTeamMember() {
 							defaultValue="member"
 							name="role"
 							className="flex space-x-4"
-							disabled={!isOwner}
+							disabled={!isOwnerOrSuperAdmin}
 						>
 							<div className="flex items-center space-x-2 mt-2">
 								<RadioGroupItem
@@ -240,7 +240,7 @@ function InviteTeamMember() {
 					<Button
 						type="submit"
 						className="bg-orange-500 hover:bg-orange-600 text-white"
-						disabled={isInvitePending || !isOwner}
+						disabled={isInvitePending || !isOwnerOrSuperAdmin}
 					>
 						{isInvitePending ? (
 							<>
@@ -256,9 +256,11 @@ function InviteTeamMember() {
 					</Button>
 				</form>
 			</CardContent>
-			{!isOwner && (
+			{!isOwnerOrSuperAdmin && (
 				<CardFooter>
-					<p className="text-sm text-muted-foreground">You must be a team owner to invite new members.</p>
+					<p className="text-sm text-muted-foreground">
+						You must be a team owner or super admin to invite new members.
+					</p>
 				</CardFooter>
 			)}
 		</Card>

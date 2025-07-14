@@ -17,7 +17,9 @@ export default async function UsersPage() {
 	// Find the current user's membership
 	const currentMembership = team.teamMembers.find(member => member.user.id === currentUser.id)
 
-	if (!currentMembership || currentMembership.role !== 'owner') {
+	const isOwnerOrSuperAdmin =
+		currentMembership && (currentMembership.role === 'owner' || currentMembership.role === 'super_admin')
+	if (!isOwnerOrSuperAdmin) {
 		redirect('/dashboard')
 	}
 
