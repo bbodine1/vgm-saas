@@ -41,6 +41,8 @@ async function createStripeProducts() {
 }
 
 async function seed() {
+	// Organization name must be 4-20 chars and unique
+	// All users except super admin must be associated with at least one organization
 	const email = 'test@test.com'
 	const password = 'admin123'
 	const passwordHash = await hashPassword(password)
@@ -66,18 +68,38 @@ async function seed() {
 		console.log('Initial user already exists.')
 	}
 
-	const [team] = await db
-		.insert(teams)
-		.values({
-			name: 'Test Team',
-		})
-		.returning()
+	// Ensure unique org name and valid length
+	const orgName = 'Test Team'
+	if (orgName.length < 4 || orgName.length > 20) {
+		throw new Error('Organization name must be between 4 and 20 characters.')
+	}
+	const existingTeam = await db.select().from(teams).where(eq(teams.name, orgName)).limit(1)
+	let team
+	if (existingTeam.length === 0) {
+		;[team] = await db
+			.insert(teams)
+			.values({
+				name: orgName,
+			})
+			.returning()
+		console.log('Initial team created.')
+	} else {
+		team = existingTeam[0]
+		console.log('Initial team already exists.')
+	}
 
-	await db.insert(teamMembers).values({
-		teamId: team.id,
-		userId: user.id,
-		role: 'owner',
-	})
+	// Associate user with team
+	const existingTeamMember = await db.select().from(teamMembers).where(eq(teamMembers.userId, user.id)).limit(1)
+	if (existingTeamMember.length === 0) {
+		await db.insert(teamMembers).values({
+			teamId: team.id,
+			userId: user.id,
+			role: 'owner',
+		})
+		console.log('User associated with team.')
+	} else {
+		console.log('User already associated with team.')
+	}
 
 	// Check if the super admin user exists
 	const superAdminEmail = 'superadmin@test.com'

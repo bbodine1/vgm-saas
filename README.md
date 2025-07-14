@@ -53,14 +53,20 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
-This will create the following user and team:
+This will create the following users and team:
 
-- User: `test@test.com`
+- User: `test@test.com` (Owner of organization "Test Team")
 - Password: `admin123`
-- Super Admin: `superadmin@test.com`
+- Super Admin: `superadmin@test.com` (not associated with any organization)
 - Password: `superadmin123`
 
 You can also create new users through the `/sign-up` route.
+
+## Organization Requirements
+
+When signing up, users must name the organization (team) they are creating. The organization name must be unique, between 4 and 20 characters. All users must be associated with at least one organization, except users with the role of admin or super admin.
+
+You can also create new users through the `/sign-up` route. The sign-up form will require an organization name that meets the above requirements.
 
 Finally, run the Next.js development server:
 
