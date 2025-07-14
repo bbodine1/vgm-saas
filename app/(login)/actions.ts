@@ -22,6 +22,7 @@ import { cookies } from 'next/headers'
 import { createCheckoutSession } from '@/lib/payments/stripe'
 import { getUser, getUserWithTeam } from '@/lib/db/queries'
 import { validatedAction, validatedActionWithUser } from '@/lib/auth/middleware'
+import { sendEmail } from '@/lib/server/email'
 
 async function logActivity(teamId: number | null | undefined, userId: number, type: ActivityType, ipAddress?: string) {
 	if (teamId === null || teamId === undefined) {
@@ -145,7 +146,6 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
 			await db.update(invitations).set({ status: 'accepted' }).where(eq(invitations.id, invitation.id))
 
 			await logActivity(teamId, createdUser.id, ActivityType.ACCEPT_INVITATION)
-
 			;[createdTeam] = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1)
 		} else {
 			return { error: 'Invalid or expired invitation.', email, password }
@@ -380,19 +380,36 @@ export const inviteTeamMember = validatedActionWithUser(inviteTeamMemberSchema, 
 		return { error: 'An invitation has already been sent to this email' }
 	}
 
-	// Create a new invitation
-	await db.insert(invitations).values({
-		teamId: userWithTeam.teamId,
-		email,
-		role,
-		invitedBy: user.id,
-		status: 'pending',
-	})
+	// Create a new invitation and get the inserted row
+	const [invitation] = await db
+		.insert(invitations)
+		.values({
+			teamId: userWithTeam.teamId,
+			email,
+			role,
+			invitedBy: user.id,
+			status: 'pending',
+		})
+		.returning()
 
 	await logActivity(userWithTeam.teamId, user.id, ActivityType.INVITE_TEAM_MEMBER)
 
-	// TODO: Send invitation email and include ?inviteId={id} to sign-up URL
-	// await sendInvitationEmail(email, userWithTeam.team.name, role)
+	// Fetch the team name for the email
+	let teamName = 'your organization'
+	const teamResult = await db.select().from(teams).where(eq(teams.id, userWithTeam.teamId)).limit(1)
+	if (teamResult.length > 0) {
+		teamName = teamResult[0].name
+	}
+
+	// Send invitation email
+	if (invitation) {
+		const signupUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/sign-up?inviteId=${invitation.id}`
+		await sendEmail({
+			to: email,
+			subject: `You're invited to join ${teamName} on Very Good SaaS!`,
+			html: `<p>Hello,</p><p>You have been invited to join <b>${teamName}</b> as a <b>${role}</b> on Very Good SaaS.</p><p><a href="${signupUrl}">Click here to accept your invitation and sign up</a>.</p><p>If you did not expect this invitation, you can ignore this email.</p>`,
+		})
+	}
 
 	return { success: 'Invitation sent successfully' }
 })

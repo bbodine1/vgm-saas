@@ -5,10 +5,22 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Users, Settings, Shield, Activity, Menu, LayoutDashboard } from 'lucide-react'
+import useSWR from 'swr'
+import { useRouter } from 'next/navigation'
+import { useTransition } from 'react'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { Combobox } from '@/components/ui/combobox'
+
+const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname()
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+	const router = useRouter()
+	const [isPending, startTransition] = useTransition()
+
+	const { data: currentTeam } = useSWR('/api/team', fetcher)
+	const { data: allTeams } = useSWR('/api/team', fetcher)
 
 	const navItems = [
 		{ href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -19,8 +31,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		{ href: '/dashboard/security', icon: Shield, label: 'Security' },
 	]
 
+	async function handleSwitchTeam(value: string | number) {
+		const teamId = typeof value === 'string' ? parseInt(value, 10) : value
+		await fetch('/api/user', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ teamId }),
+		})
+		// Refresh the page to update context
+		startTransition(() => {
+			router.refresh()
+		})
+	}
+
 	return (
 		<div className="flex flex-col min-h-[calc(100dvh-68px)] max-w-7xl mx-auto w-full">
+			{/* Main header with org switcher and user avatar */}
+
 			{/* Mobile header */}
 			<div className="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 p-4">
 				<div className="flex items-center">
