@@ -3,6 +3,7 @@ import { getTeamForUser, getUser } from '@/lib/db/queries'
 import { User } from '@/lib/db/schema'
 import React from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table'
 
 export default async function UsersPage() {
 	// Get the current user and their team
@@ -29,29 +30,29 @@ export default async function UsersPage() {
 				</CardHeader>
 				<CardContent>
 					<div className="overflow-x-auto">
-						<table className="min-w-full border border-gray-200 rounded">
-							<thead>
-								<tr className="bg-gray-100">
-									<th className="px-4 py-2 text-left">Name</th>
-									<th className="px-4 py-2 text-left">Email</th>
-									<th className="px-4 py-2 text-left">Role</th>
-									<th className="px-4 py-2 text-left">Status</th>
-								</tr>
-							</thead>
-							<tbody>
+						<Table>
+							<TableHeader>
+								<TableRow className="bg-gray-100">
+									<TableHead>Name</TableHead>
+									<TableHead>Email</TableHead>
+									<TableHead>Role</TableHead>
+									<TableHead>Status</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
 								{team.teamMembers.map(member => (
-									<tr
+									<TableRow
 										key={member.user.id}
 										className="border-t"
 									>
-										<td className="px-4 py-2">{member.user.name || '-'}</td>
-										<td className="px-4 py-2">{member.user.email}</td>
-										<td className="px-4 py-2 capitalize">{member.role}</td>
-										<td className="px-4 py-2">Active</td>
-									</tr>
+										<TableCell>{member.user.name || '-'}</TableCell>
+										<TableCell>{member.user.email}</TableCell>
+										<TableCell className="capitalize">{member.role}</TableCell>
+										<TableCell>Active</TableCell>
+									</TableRow>
 								))}
-							</tbody>
-						</table>
+							</TableBody>
+						</Table>
 					</div>
 				</CardContent>
 			</Card>
