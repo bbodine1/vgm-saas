@@ -1,0 +1,31 @@
+---
+alwaysApply: true
+---
+
+This is a SAAS starter. It will allow a user to create an account and create a organization(team). That user can then invite other users to the organization. The organization requires a subscription membership and can have unlimited members. A user can be a part of multiple organizations.
+
+The user who creates the organization will be given the role of owner. An owner will have full rights to the organization. There can be multiple owners of an organization. The original owner can not have their role downgraded by another role other than a super admin role.
+
+A super admin role is given to the application administrator. There can be multiple users with the super admin role. These users will be added to the user database manually. Super admin users have full rights to all organizations and can update the role of any user.
+
+The default role for each user that is invited to an organization is a Member. This role has only view rights.
+
+## Features
+
+- Marketing landing page (`/`) with animated Terminal element
+- Pricing page (`/pricing`) which connects to Stripe Checkout
+- Dashboard pages with CRUD operations on users/teams
+- Basic RBAC with Owner and Member roles
+- Subscription management with Stripe Customer Portal
+- Email/password authentication with JWTs stored to cookies
+- Global middleware to protect logged-in routes
+- Local middleware to protect Server Actions or validate Zod schemas
+- Activity logging system for any user events
+
+## Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org/)
+- **Database**: [Postgres](https://www.postgresql.org/)
+- **ORM**: [Drizzle](https://orm.drizzle.team/)
+- **Payments**: [Stripe](https://stripe.com/)
+- **UI Library**: [shadcn/ui](https://ui.shadcn.com/)
