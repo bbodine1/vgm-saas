@@ -23,10 +23,10 @@ export default async function UsersPage() {
 
 	return (
 		<section className="flex-1 p-4 lg:p-8">
-			<h1 className="text-lg lg:text-2xl font-medium mb-6">Team Members</h1>
+			<h1 className="text-lg lg:text-2xl font-medium mb-6">Users</h1>
 			<Card>
 				<CardHeader>
-					<CardTitle>Team Members</CardTitle>
+					<CardTitle>Users</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<div className="overflow-x-auto">
