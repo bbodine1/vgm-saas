@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Loader2, PlusCircle } from 'lucide-react'
+import { UserAvatar } from '@/components/UserAvatar'
 
 type ActionState = {
 	error?: string
@@ -123,21 +124,7 @@ function TeamMembers() {
 						>
 							<div className="flex items-center space-x-4">
 								<Avatar>
-									{/* 
-                    This app doesn't save profile images, but here
-                    is how you'd show them:
-
-                    <AvatarImage
-                      src={member.user.image || ''}
-                      alt={getUserDisplayName(member.user)}
-                    />
-                  */}
-									<AvatarFallback>
-										{getUserDisplayName(member.user)
-											.split(' ')
-											.map(n => n[0])
-											.join('')}
-									</AvatarFallback>
+									<UserAvatar user={member.user} />
 								</Avatar>
 								<div>
 									<p className="font-medium">{getUserDisplayName(member.user)}</p>
