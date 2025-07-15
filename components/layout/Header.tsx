@@ -12,10 +12,7 @@ import { UserMenu } from 'app/(dashboard)/layout'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
-const navItems = [
-	{ href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-	{ href: '/settings', icon: Settings, label: 'Settings' },
-]
+const navItems = [{ href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' }]
 
 const Header: React.FC = () => {
 	const { data: allTeamsRaw, isLoading, error: teamsError } = useSWR('/api/team', fetcher)

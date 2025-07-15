@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Home, LogOut } from 'lucide-react'
+import { Home, LogOut, Settings } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { signOut } from '@/app/(login)/actions'
@@ -82,6 +82,15 @@ export function UserMenu() {
 					>
 						<Home className="mr-2 h-4 w-4" />
 						<span>Dashboard</span>
+					</Link>
+				</DropdownMenuItem>
+				<DropdownMenuItem className="cursor-pointer">
+					<Link
+						href="/settings"
+						className="flex w-full items-center"
+					>
+						<Settings className="mr-2 h-4 w-4" />
+						<span>Settings</span>
 					</Link>
 				</DropdownMenuItem>
 				<form

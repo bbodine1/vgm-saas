@@ -23,6 +23,8 @@ import { createCheckoutSession } from '@/lib/payments/stripe'
 import { getUser, getUserWithTeam } from '@/lib/db/queries'
 import { validatedAction, validatedActionWithUser } from '@/lib/auth/middleware'
 import { sendEmail } from '@/lib/server/email'
+import crypto from 'crypto'
+import { passwordResetTokens } from '@/lib/db/schema'
 
 async function logActivity(teamId: number | null | undefined, userId: number, type: ActivityType, ipAddress?: string) {
 	if (teamId === null || teamId === undefined) {
@@ -412,4 +414,49 @@ export const inviteTeamMember = validatedActionWithUser(inviteTeamMemberSchema, 
 	}
 
 	return { success: 'Invitation sent successfully' }
+})
+
+const requestPasswordResetSchema = z.object({
+	email: z.string().email(),
+})
+
+export const requestPasswordReset = validatedAction(requestPasswordResetSchema, async data => {
+	const { email } = data
+	const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1)
+	if (!user) {
+		return { success: 'If an account exists, a reset link has been sent.' }
+	}
+	const token = crypto.randomBytes(32).toString('hex')
+	const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+	await db.insert(passwordResetTokens).values({
+		userId: user.id,
+		token,
+		expiresAt,
+	})
+	const resetLink = `${process.env.BASE_URL}/reset-password?token=${token}`
+	const html = `<p>To reset your password, click <a href="${resetLink}">here</a>.</p>`
+	await sendEmail({ to: email, subject: 'Password Reset', html })
+	return { success: 'If an account exists, a reset link has been sent.' }
+})
+const resetPasswordSchema = z.object({
+	token: z.string(),
+	password: z.string().min(8),
+	confirmPassword: z.string().min(8),
+})
+
+export const resetPassword = validatedAction(resetPasswordSchema, async data => {
+	const { token, password, confirmPassword } = data
+	if (password !== confirmPassword) {
+		return { error: 'Passwords do not match' }
+	}
+	const [resetToken] = await db.select().from(passwordResetTokens).where(eq(passwordResetTokens.token, token)).limit(1)
+	if (!resetToken || resetToken.expiresAt < new Date()) {
+		return { error: 'Invalid or expired reset token' }
+	}
+	const passwordHash = await hashPassword(password)
+	await db.transaction(async tx => {
+		await tx.update(users).set({ passwordHash }).where(eq(users.id, resetToken.userId))
+		await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.token, token))
+	})
+	return { success: 'Password reset successfully. You can now log in.' }
 })

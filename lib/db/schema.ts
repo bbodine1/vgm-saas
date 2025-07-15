@@ -61,6 +61,15 @@ export const invitations = pgTable('invitations', {
 	status: varchar('status', { length: 20 }).notNull().default('pending'),
 })
 
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+	id: serial('id').primaryKey(),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	token: text('token').notNull().unique(),
+	expiresAt: timestamp('expires_at').notNull(),
+})
+
 export const teamsRelations = relations(teams, ({ many }) => ({
 	teamMembers: many(teamMembers),
 	activityLogs: many(activityLogs),
@@ -101,6 +110,13 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
 	}),
 	user: one(users, {
 		fields: [activityLogs.userId],
+		references: [users.id],
+	}),
+}))
+
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+	user: one(users, {
+		fields: [passwordResetTokens.userId],
 		references: [users.id],
 	}),
 }))

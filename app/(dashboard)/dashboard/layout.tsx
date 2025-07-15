@@ -5,7 +5,7 @@ import useSWR from 'swr'
 import { useState, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Users, Settings, Shield, Activity, LayoutDashboard } from 'lucide-react'
+import { Users, Settings, Shield, Activity, Home } from 'lucide-react'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -18,10 +18,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	const { data: currentTeam } = useSWR('/api/team', fetcher)
 	const { data: allTeams } = useSWR('/api/team', fetcher)
 
-	const navItems = [
-		{ href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-		{ href: '/settings', icon: Settings, label: 'Settings' },
-	]
+	const navItems = [{ href: '/dashboard', icon: Home, label: 'Dashboard' }]
 
 	async function handleSwitchTeam(value: string | number) {
 		const teamId = typeof value === 'string' ? parseInt(value, 10) : value
