@@ -76,10 +76,11 @@ const Header: React.FC = () => {
 					>
 						<CircleIcon className="h-6 w-6 text-orange-500" />
 					</Link>
-					{team && allTeams && allTeams.length === 1 && (
+					{!userData && <span className="text-xl font-semibold text-gray-900">Acme</span>}
+					{userData && team && allTeams && allTeams.length === 1 && (
 						<span className="text-xl font-semibold text-gray-900">{team.name}</span>
 					)}
-					{team && allTeams && allTeams.length > 1 && (
+					{userData && team && allTeams && allTeams.length > 1 && (
 						<Combobox
 							options={allTeams
 								.filter((t: any) => t.subscriptionStatus === 'active' || t.subscriptionStatus === 'trialing')
@@ -178,11 +179,8 @@ export function TeamHeader() {
 	const mobileHeader = (
 		<div className="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 p-4">
 			<div className="flex items-center">
-				{team ? (
-					<span className="font-medium text-xl truncate max-w-[12rem]">{team.name}</span>
-				) : (
-					<span className="h-6 w-24 bg-gray-200 rounded animate-pulse block" />
-				)}
+				{!userData && <span className="font-medium text-xl truncate max-w-[12rem]">Acme</span>}
+				{userData && team ? <span className="font-medium text-xl truncate max-w-[12rem]">{team.name}</span> : null}
 			</div>
 			<Button
 				className="-mr-3"
@@ -244,10 +242,11 @@ export function TeamHeader() {
 						>
 							<CircleIcon className="h-6 w-6 text-orange-500" />
 						</Link>
-						{team && allTeams && allTeams.length === 1 && (
+						{!userData && <span className="text-xl font-semibold text-gray-900">Acme</span>}
+						{userData && team && allTeams && allTeams.length === 1 && (
 							<span className="text-xl font-semibold text-gray-900">{team.name}</span>
 						)}
-						{team && allTeams && allTeams.length > 1 && (
+						{userData && team && allTeams && allTeams.length > 1 && (
 							<Combobox
 								options={allTeams
 									.filter((t: any) => t.subscriptionStatus === 'active' || t.subscriptionStatus === 'trialing')
