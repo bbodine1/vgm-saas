@@ -10,7 +10,7 @@ import { signOut } from '@/app/(login)/actions'
 import { useRouter } from 'next/navigation'
 import { User } from '@/lib/db/schema'
 import useSWR, { mutate } from 'swr'
-import { TeamHeader } from './dashboard/Header'
+import Header from '@/components/layout/Header'
 
 const fetcher = async (url: string) => {
 	try {
@@ -109,7 +109,7 @@ export function UserMenu() {
 export default function Layout({ children }: { children: React.ReactNode }) {
 	return (
 		<section className="flex flex-col min-h-screen">
-			<TeamHeader />
+			<Header />
 			{children}
 		</section>
 	)
