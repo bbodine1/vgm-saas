@@ -20,11 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 	const navItems = [
 		{ href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-		{ href: '/dashboard/users', icon: Users, label: 'Users' },
-		{ href: '/dashboard/team', icon: Users, label: 'Team' },
-		{ href: '/dashboard/general', icon: Settings, label: 'General' },
-		{ href: '/dashboard/activity', icon: Activity, label: 'Activity' },
-		{ href: '/dashboard/security', icon: Shield, label: 'Security' },
+		{ href: '/settings', icon: Settings, label: 'Settings' },
 	]
 
 	async function handleSwitchTeam(value: string | number) {
