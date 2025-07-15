@@ -1,15 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Users, Settings, Shield, Activity, Menu, LayoutDashboard } from 'lucide-react'
 import useSWR from 'swr'
-import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
-import { Combobox } from '@/components/ui/combobox'
+import { useState, useTransition } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Users, Settings, Shield, Activity, LayoutDashboard } from 'lucide-react'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -46,23 +42,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 	return (
 		<div className="flex flex-col min-h-[calc(100dvh-68px)] max-w-7xl mx-auto w-full">
-			{/* Main header with org switcher and user avatar */}
-
-			{/* Mobile header */}
-			<div className="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 p-4">
-				<div className="flex items-center">
-					<span className="font-medium">Settings</span>
-				</div>
-				<Button
-					className="-mr-3"
-					variant="ghost"
-					onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-				>
-					<Menu className="h-6 w-6" />
-					<span className="sr-only">Toggle sidebar</span>
-				</Button>
-			</div>
-
 			<div className="flex flex-1 overflow-hidden h-full">
 				{/* Sidebar */}
 				<aside
@@ -91,7 +70,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 						))}
 					</nav>
 				</aside>
-
 				{/* Main content */}
 				<main className="flex-1 overflow-y-auto p-0 lg:p-4">{children}</main>
 			</div>

@@ -64,8 +64,8 @@ async function seed() {
 
 	// Ensure unique org name and valid length
 	const orgName = 'Test Team'
-	if (orgName.length < 4 || orgName.length > 20) {
-		throw new Error('Organization name must be between 4 and 20 characters.')
+	if (orgName.length < 4 || orgName.length > 100) {
+		throw new Error('Organization name must be between 4 and 100 characters.')
 	}
 	const existingTeam = await db.select().from(teams).where(eq(teams.name, orgName)).limit(1)
 	let team
