@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Loader2 } from 'lucide-react'
 import { updateAccount } from '@/app/(login)/actions'
-import { User } from '@/lib/db/schema'
+import { updateOrganizationName } from '@/app/(login)/actions'
+import { User, TeamDataWithMembers } from '@/lib/db/schema'
 import useSWR from 'swr'
 import { Suspense } from 'react'
 
@@ -76,10 +77,56 @@ function AccountFormWithData({ state }: { state: ActionState }) {
 
 export default function GeneralPage() {
 	const [state, formAction, isPending] = useActionState<ActionState, FormData>(updateAccount, {})
+	const [orgState, orgFormAction, isOrgPending] = useActionState<any, FormData>(updateOrganizationName, {})
+	const { data: team } = useSWR<TeamDataWithMembers>('/api/team', fetcher)
+	const { data: user } = useSWR<User>('/api/user', fetcher)
+	const isOwnerOrSuperAdmin = user?.role === 'owner' || user?.role === 'super_admin'
 
 	return (
 		<section className="flex-1 p-4 lg:p-8">
 			<h1 className="text-lg lg:text-2xl font-medium text-gray-900 mb-6">General Settings</h1>
+
+			{isOwnerOrSuperAdmin && (
+				<Card className="mb-8">
+					<CardHeader>
+						<CardTitle>Organization Name</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<form
+							className="space-y-4"
+							action={orgFormAction}
+						>
+							<Label htmlFor="orgName">Organization Name</Label>
+							<Input
+								id="orgName"
+								name="name"
+								defaultValue={orgState.name || team?.name || ''}
+								placeholder="Enter organization name"
+								required
+								minLength={4}
+								maxLength={100}
+								disabled={isOrgPending}
+							/>
+							{orgState.error && <p className="text-red-500 text-sm">{orgState.error}</p>}
+							{orgState.success && <p className="text-green-500 text-sm">{orgState.success}</p>}
+							<Button
+								type="submit"
+								className="bg-orange-500 hover:bg-orange-600 text-white"
+								disabled={isOrgPending}
+							>
+								{isOrgPending ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Saving...
+									</>
+								) : (
+									'Save Organization Name'
+								)}
+							</Button>
+						</form>
+					</CardContent>
+				</Card>
+			)}
 
 			<Card>
 				<CardHeader>

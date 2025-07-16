@@ -20,7 +20,7 @@ import { comparePasswords, hashPassword, setSession } from '@/lib/auth/session'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { createCheckoutSession } from '@/lib/payments/stripe'
-import { getUser, getTeamForUser, deleteInvitation } from '@/lib/db/queries'
+import { getUser, getTeamForUser, deleteInvitation, updateTeamName } from '@/lib/db/queries'
 import { validatedAction, validatedActionWithUser } from '@/lib/auth/middleware'
 import { sendEmail } from '@/lib/server/email'
 import crypto from 'crypto'
@@ -585,5 +585,31 @@ export const acceptInvitation = validatedActionWithUser(acceptInvitationSchema, 
 	return {
 		success: 'Invitation accepted successfully! You are now a member of this organization.',
 		teamId: invitation.teamId,
+	}
+})
+
+const updateOrgNameSchema = z.object({
+	name: z
+		.string()
+		.min(4, 'Organization name must be at least 4 characters')
+		.max(100, 'Organization name must be at most 100 characters'),
+})
+
+export const updateOrganizationName = validatedActionWithUser(updateOrgNameSchema, async (data, _, user) => {
+	const { name } = data
+	const team = await getTeamForUser()
+	if (!team) {
+		return { error: 'No active organization found.' }
+	}
+	const isSuperAdmin = user.role === 'super_admin'
+	const isOwner = team.teamMembers?.some?.(m => m.userId === user.id && m.role === 'owner') || user.role === 'owner'
+	if (!isSuperAdmin && !isOwner) {
+		return { error: 'Not authorized.' }
+	}
+	try {
+		await updateTeamName(team.id, name)
+		return { success: 'Organization name updated successfully.', name }
+	} catch (e: any) {
+		return { error: e.message || 'Failed to update organization name.' }
 	}
 })

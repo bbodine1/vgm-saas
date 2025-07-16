@@ -273,6 +273,16 @@ export async function deleteInvitation(invitationId: number) {
 	return true
 }
 
+// Update the team name (organization name) with uniqueness check
+export async function updateTeamName(teamId: number, newName: string) {
+	// Check uniqueness
+	const existing = await db.select().from(teams).where(eq(teams.name, newName)).limit(1)
+	if (existing.length > 0 && existing[0].id !== teamId) {
+		throw new Error('Organization name is already taken.')
+	}
+	await db.update(teams).set({ name: newName, updatedAt: new Date() }).where(eq(teams.id, teamId))
+}
+
 // Helper: can currentUser manage (update/delete) targetUser's role?
 export function canManageUserRoles(currentUser: User, targetUser: User): boolean {
 	if (currentUser.role === 'super_admin') return true
