@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import useSWR from 'swr'
+import useSWR, { mutate } from 'swr'
 import { useState, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -28,6 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 			body: JSON.stringify({ teamId }),
 		})
 		// Refresh the page to update context
+		await mutate('/api/team')
 		startTransition(() => {
 			router.refresh()
 		})

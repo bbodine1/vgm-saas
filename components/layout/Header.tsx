@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import useSWR from 'swr'
+import useSWR, { mutate } from 'swr'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTransition, Suspense } from 'react'
 import { Combobox } from '@/components/ui/combobox'
@@ -36,6 +36,7 @@ const Header: React.FC = () => {
 			if (response.ok) {
 				// Invalidate user cache to refetch updated activeTeamId
 				await mutateUser()
+				await mutate('/api/team')
 				startTransition(() => {
 					router.refresh()
 				})
@@ -134,6 +135,7 @@ export function TeamHeader() {
 		if (response.ok) {
 			// Invalidate user cache to refetch updated activeTeamId
 			await mutateUser()
+			await mutate('/api/team')
 			startTransition(() => {
 				router.refresh()
 			})
