@@ -262,6 +262,17 @@ export async function approveInvitation(invitationId: number) {
 	return true
 }
 
+// Delete a pending invitation
+export async function deleteInvitation(invitationId: number) {
+	// First check if the invitation exists and is pending
+	const [invite] = await db.select().from(invitations).where(eq(invitations.id, invitationId)).limit(1)
+	if (!invite || invite.status !== 'pending') return false
+
+	// Delete the invitation
+	await db.delete(invitations).where(eq(invitations.id, invitationId))
+	return true
+}
+
 // Helper: can currentUser manage (update/delete) targetUser's role?
 export function canManageUserRoles(currentUser: User, targetUser: User): boolean {
 	if (currentUser.role === 'super_admin') return true

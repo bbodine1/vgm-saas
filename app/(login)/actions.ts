@@ -20,7 +20,7 @@ import { comparePasswords, hashPassword, setSession } from '@/lib/auth/session'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { createCheckoutSession } from '@/lib/payments/stripe'
-import { getUser, getTeamForUser } from '@/lib/db/queries'
+import { getUser, getTeamForUser, deleteInvitation } from '@/lib/db/queries'
 import { validatedAction, validatedActionWithUser } from '@/lib/auth/middleware'
 import { sendEmail } from '@/lib/server/email'
 import crypto from 'crypto'
@@ -71,6 +71,51 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
 	const team = await getTeamForUser()
 	await logActivity(team?.id, foundUser.id, ActivityType.SIGN_IN)
 
+	// Check if there's an invitation to accept
+	const inviteId = formData.get('inviteId') as string | null
+	if (inviteId) {
+		// Try to accept the invitation
+		const [invitation] = await db
+			.select()
+			.from(invitations)
+			.where(
+				and(
+					eq(invitations.id, parseInt(inviteId)),
+					eq(invitations.email, foundUser.email),
+					eq(invitations.status, 'pending')
+				)
+			)
+			.limit(1)
+
+		if (invitation) {
+			// Check if user is already a member of this team
+			const existingMembership = await db
+				.select()
+				.from(teamMembers)
+				.where(and(eq(teamMembers.userId, foundUser.id), eq(teamMembers.teamId, invitation.teamId)))
+				.limit(1)
+
+			if (existingMembership.length === 0) {
+				// Add user as team member
+				const newTeamMember: NewTeamMember = {
+					userId: foundUser.id,
+					teamId: invitation.teamId,
+					role: invitation.role,
+				}
+				await db.insert(teamMembers).values(newTeamMember)
+			}
+
+			// Update invitation status and set session to this team
+			await Promise.all([
+				db.update(invitations).set({ status: 'accepted' }).where(eq(invitations.id, invitation.id)),
+				setSession(foundUser, invitation.teamId),
+				logActivity(invitation.teamId, foundUser.id, ActivityType.ACCEPT_INVITATION),
+			])
+
+			redirect('/dashboard')
+		}
+	}
+
 	const redirectTo = formData.get('redirect') as string | null
 	if (redirectTo === 'checkout') {
 		const priceId = formData.get('priceId') as string
@@ -93,6 +138,15 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
 	const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1)
 
 	if (existingUser.length > 0) {
+		// If user exists and there's an invitation, redirect them to sign in
+		if (inviteId) {
+			return {
+				error: 'An account with this email already exists. Please sign in to accept your invitation.',
+				email,
+				password,
+				redirectToSignIn: true,
+			}
+		}
 		return {
 			error: 'Failed to create user. Please try again.',
 			email,
@@ -192,7 +246,7 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
 	await Promise.all([
 		db.insert(teamMembers).values(newTeamMember),
 		logActivity(teamId, createdUser.id, ActivityType.SIGN_UP),
-		setSession(createdUser),
+		setSession(createdUser, teamId),
 	])
 
 	const redirectTo = formData.get('redirect') as string | null
@@ -385,15 +439,51 @@ export const inviteTeamMember = validatedActionWithUser(inviteTeamMemberSchema, 
 
 	// Send invitation email
 	if (invitation) {
-		const signupUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/sign-up?inviteId=${invitation.id}`
+		const invitationUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/accept-invitation?inviteId=${
+			invitation.id
+		}`
 		await sendEmail({
 			to: email,
 			subject: `You're invited to join ${teamName} on Very Good SaaS!`,
-			html: `<p>Hello,</p><p>You have been invited to join <b>${teamName}</b> as a <b>${role}</b> on Very Good SaaS.</p><p><a href="${signupUrl}">Click here to accept your invitation and sign up</a>.</p><p>If you did not expect this invitation, you can ignore this email.</p>`,
+			html: `<p>Hello,</p><p>You have been invited to join <b>${teamName}</b> as a <b>${role}</b> on Very Good SaaS.</p><p><a href="${invitationUrl}">Click here to accept your invitation</a>.</p><p>If you did not expect this invitation, you can ignore this email.</p>`,
 		})
 	}
 
 	return { success: 'Invitation sent successfully' }
+})
+
+const deleteInvitationSchema = z.object({
+	invitationId: z.coerce.number(),
+})
+
+export const deleteInvitationAction = validatedActionWithUser(deleteInvitationSchema, async (data, _, user) => {
+	const { invitationId } = data
+	const team = await getTeamForUser()
+
+	if (!team) {
+		return { error: 'You must be part of a team to delete invitations' }
+	}
+
+	// Verify the invitation belongs to the current team
+	const [invitation] = await db
+		.select()
+		.from(invitations)
+		.where(and(eq(invitations.id, invitationId), eq(invitations.teamId, team.id)))
+		.limit(1)
+
+	if (!invitation) {
+		return { error: 'Invitation not found or access denied' }
+	}
+
+	const success = await deleteInvitation(invitationId)
+
+	if (!success) {
+		return { error: 'Failed to delete invitation. It may have already been accepted or does not exist.' }
+	}
+
+	await logActivity(team.id, user.id, ActivityType.DELETE_INVITATION)
+
+	return { success: 'Invitation deleted successfully' }
 })
 
 const requestPasswordResetSchema = z.object({
@@ -439,4 +529,61 @@ export const resetPassword = validatedAction(resetPasswordSchema, async data => 
 		await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.token, token))
 	})
 	return { success: 'Password reset successfully. You can now log in.' }
+})
+
+const acceptInvitationSchema = z.object({
+	inviteId: z.string(),
+})
+
+export const acceptInvitation = validatedActionWithUser(acceptInvitationSchema, async (data, _, user) => {
+	const { inviteId } = data
+
+	// Get the invitation
+	const [invitation] = await db
+		.select()
+		.from(invitations)
+		.where(
+			and(eq(invitations.id, parseInt(inviteId)), eq(invitations.email, user.email), eq(invitations.status, 'pending'))
+		)
+		.limit(1)
+
+	if (!invitation) {
+		return { error: 'Invalid or expired invitation.' }
+	}
+
+	// Check if user is already a member of this team
+	const existingMembership = await db
+		.select()
+		.from(teamMembers)
+		.where(and(eq(teamMembers.userId, user.id), eq(teamMembers.teamId, invitation.teamId)))
+		.limit(1)
+
+	if (existingMembership.length > 0) {
+		// Update invitation status but don't add duplicate membership
+		await db.update(invitations).set({ status: 'accepted' }).where(eq(invitations.id, invitation.id))
+
+		// Set session to this team and redirect
+		await setSession(user, invitation.teamId)
+		await logActivity(invitation.teamId, user.id, ActivityType.ACCEPT_INVITATION)
+		return { success: 'Invitation accepted. You are now switched to this organization.', teamId: invitation.teamId }
+	}
+
+	// Add user as team member
+	const newTeamMember: NewTeamMember = {
+		userId: user.id,
+		teamId: invitation.teamId,
+		role: invitation.role,
+	}
+
+	await Promise.all([
+		db.insert(teamMembers).values(newTeamMember),
+		db.update(invitations).set({ status: 'accepted' }).where(eq(invitations.id, invitation.id)),
+		setSession(user, invitation.teamId),
+		logActivity(invitation.teamId, user.id, ActivityType.ACCEPT_INVITATION),
+	])
+
+	return {
+		success: 'Invitation accepted successfully! You are now a member of this organization.',
+		teamId: invitation.teamId,
+	}
 })

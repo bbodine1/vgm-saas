@@ -2,10 +2,8 @@
 
 import * as React from 'react'
 import { Check, ChevronsUpDown } from 'lucide-react'
-
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 type Option = {
@@ -44,26 +42,28 @@ export function Combobox({ options, value, onChange, placeholder = 'Select...', 
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-[200px] p-0">
-				<Command>
-					<CommandInput placeholder={placeholder} />
-					<CommandEmpty>No options found.</CommandEmpty>
-					<CommandGroup>
-						{options.map(option => (
-							<CommandItem
-								key={option.value}
-								value={option.label} // Use label for search
-								disabled={option.disabled}
-								onSelect={() => {
+				<div className="p-1">
+					{options.map(option => (
+						<div
+							key={option.value}
+							className={cn(
+								'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+								option.disabled && 'cursor-not-allowed opacity-50'
+							)}
+							onClick={e => {
+								e.preventDefault()
+								e.stopPropagation()
+								if (!option.disabled) {
 									onChange(option.value)
 									setOpen(false)
-								}}
-							>
-								<Check className={cn('mr-2 h-4 w-4', value === option.value ? 'opacity-100' : 'opacity-0')} />
-								{option.label}
-							</CommandItem>
-						))}
-					</CommandGroup>
-				</Command>
+								}
+							}}
+						>
+							<Check className={cn('mr-2 h-4 w-4', value === option.value ? 'opacity-100' : 'opacity-0')} />
+							{option.label}
+						</div>
+					))}
+				</div>
 			</PopoverContent>
 		</Popover>
 	)

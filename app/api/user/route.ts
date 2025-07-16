@@ -1,12 +1,23 @@
 import { getUser } from '@/lib/db/queries'
 import { db } from '@/lib/db/drizzle'
 import { teamMembers, users } from '@/lib/db/schema'
-import { setSession } from '@/lib/auth/session'
+import { setSession, getSession } from '@/lib/auth/session'
 import { and, eq } from 'drizzle-orm'
 
 export async function GET() {
 	const user = await getUser()
-	return Response.json(user)
+	if (!user) {
+		return Response.json(null)
+	}
+
+	// Get the session to include activeTeamId
+	const session = await getSession()
+	const userWithTeam = {
+		...user,
+		activeTeamId: session?.activeTeamId || null,
+	}
+
+	return Response.json(userWithTeam)
 }
 
 export async function POST(request: Request) {

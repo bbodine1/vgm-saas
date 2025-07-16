@@ -15,9 +15,9 @@ const fetcher = (url: string) => fetch(url).then(res => res.json())
 const navItems = [{ href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' }]
 
 const Header: React.FC = () => {
-	const { data: allTeamsRaw, isLoading, error: teamsError } = useSWR('/api/team', fetcher)
+	const { data: allTeamsRaw, isLoading, error: teamsError } = useSWR('/api/teams', fetcher)
 	const allTeams = Array.isArray(allTeamsRaw) ? allTeamsRaw : []
-	const { data: userData } = useSWR('/api/user', fetcher)
+	const { data: userData, mutate: mutateUser } = useSWR('/api/user', fetcher)
 	const activeTeamId = userData?.activeTeamId
 	const team = allTeams && allTeams.length > 0 ? allTeams.find((t: any) => t.id === activeTeamId) || allTeams[0] : null
 	const router = useRouter()
@@ -25,14 +25,24 @@ const Header: React.FC = () => {
 
 	async function handleSwitchTeam(value: string | number) {
 		const teamId = typeof value === 'string' ? parseInt(value, 10) : value
-		await fetch('/api/user', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ teamId }),
-		})
-		startTransition(() => {
-			router.refresh()
-		})
+
+		try {
+			const response = await fetch('/api/user', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ teamId }),
+			})
+
+			if (response.ok) {
+				// Invalidate user cache to refetch updated activeTeamId
+				await mutateUser()
+				startTransition(() => {
+					router.refresh()
+				})
+			}
+		} catch (error) {
+			console.error('Error switching teams:', error)
+		}
 	}
 
 	if (teamsError) {
@@ -80,9 +90,12 @@ const Header: React.FC = () => {
 					{userData && team && allTeams && allTeams.length > 1 && (
 						<Combobox
 							options={allTeams
-								.filter((t: any) => t.subscriptionStatus === 'active' || t.subscriptionStatus === 'trialing')
-								.map((t: any) => ({ value: t.id, label: t.name }))}
-							value={team.id}
+								.filter(
+									(t: any) =>
+										t.subscriptionStatus === 'active' || t.subscriptionStatus === 'trialing' || !t.subscriptionStatus
+								)
+								.map((t: any) => ({ value: String(t.id), label: t.name, disabled: false }))}
+							value={String(team.id)}
 							onChange={handleSwitchTeam}
 							placeholder={team.name}
 							disabled={false}
@@ -100,9 +113,9 @@ const Header: React.FC = () => {
 }
 
 export function TeamHeader() {
-	const { data: allTeamsRaw, isLoading, error: teamsError } = useSWR('/api/team', fetcher)
+	const { data: allTeamsRaw, isLoading, error: teamsError } = useSWR('/api/teams', fetcher)
 	const allTeams = Array.isArray(allTeamsRaw) ? allTeamsRaw : []
-	const { data: userData } = useSWR('/api/user', fetcher)
+	const { data: userData, mutate: mutateUser } = useSWR('/api/user', fetcher)
 	const activeTeamId = userData?.activeTeamId
 	const team = allTeams && allTeams.length > 0 ? allTeams.find((t: any) => t.id === activeTeamId) || allTeams[0] : null
 	const router = useRouter()
@@ -112,14 +125,19 @@ export function TeamHeader() {
 
 	async function handleSwitchTeam(value: string | number) {
 		const teamId = typeof value === 'string' ? parseInt(value, 10) : value
-		await fetch('/api/user', {
+		const response = await fetch('/api/user', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ teamId }),
 		})
-		startTransition(() => {
-			router.refresh()
-		})
+
+		if (response.ok) {
+			// Invalidate user cache to refetch updated activeTeamId
+			await mutateUser()
+			startTransition(() => {
+				router.refresh()
+			})
+		}
 	}
 
 	// Mobile sidebar overlay
@@ -246,9 +264,12 @@ export function TeamHeader() {
 						{userData && team && allTeams && allTeams.length > 1 && (
 							<Combobox
 								options={allTeams
-									.filter((t: any) => t.subscriptionStatus === 'active' || t.subscriptionStatus === 'trialing')
-									.map((t: any) => ({ value: t.id, label: t.name }))}
-								value={team.id}
+									.filter(
+										(t: any) =>
+											t.subscriptionStatus === 'active' || t.subscriptionStatus === 'trialing' || !t.subscriptionStatus
+									)
+									.map((t: any) => ({ value: String(t.id), label: t.name, disabled: false }))}
+								value={String(team.id)}
 								onChange={handleSwitchTeam}
 								placeholder={team.name}
 								disabled={false}

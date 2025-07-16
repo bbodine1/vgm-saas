@@ -15,6 +15,7 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
 	const redirect = searchParams.get('redirect')
 	const priceId = searchParams.get('priceId')
 	const inviteId = searchParams.get('inviteId')
+	const emailParam = searchParams.get('email')
 	const [state, formAction, pending] = useActionState<ActionState, FormData>(mode === 'signin' ? signIn : signUp, {
 		error: '',
 	})
@@ -63,7 +64,7 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
 								name="email"
 								type="email"
 								autoComplete="email"
-								defaultValue={state.email}
+								defaultValue={emailParam || state.email}
 								required
 								maxLength={50}
 								className="appearance-none rounded-full relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-orange-500 focus:border-orange-500 focus:z-10 sm:text-sm"
@@ -72,7 +73,7 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
 						</div>
 					</div>
 
-					{mode === 'signup' && (
+					{mode === 'signup' && !inviteId && (
 						<div>
 							<Label
 								htmlFor="orgName"
@@ -131,6 +132,16 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
 
 					{state?.error && <div className="text-red-500 text-sm">{state.error}</div>}
 					{mode === 'signup' && state?.orgNameError && <div className="text-red-500 text-sm">{state.orgNameError}</div>}
+					{state?.redirectToSignIn && (
+						<div className="mt-4">
+							<Link
+								href={`/sign-in?inviteId=${inviteId}&email=${encodeURIComponent(emailParam || state.email || '')}`}
+								className="w-full flex justify-center py-2 px-4 border border-orange-300 rounded-full shadow-sm text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+							>
+								Sign in to accept invitation
+							</Link>
+						</div>
+					)}
 
 					<div>
 						<Button
