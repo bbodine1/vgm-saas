@@ -58,20 +58,6 @@ export async function updateTeamSubscription(
 		.where(eq(teams.id, teamId))
 }
 
-export async function getUserWithTeam(userId: number) {
-	const result = await db
-		.select({
-			user: users,
-			teamId: teamMembers.teamId,
-		})
-		.from(users)
-		.leftJoin(teamMembers, eq(users.id, teamMembers.userId))
-		.where(eq(users.id, userId))
-		.limit(1)
-
-	return result[0]
-}
-
 export async function getActivityLogs() {
 	const user = await getUser()
 	if (!user) {
