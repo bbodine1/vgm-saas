@@ -27,6 +27,7 @@ const iconMap: Record<ActivityType, LucideIcon> = {
 	[ActivityType.INVITE_TEAM_MEMBER]: Mail,
 	[ActivityType.ACCEPT_INVITATION]: CheckCircle,
 	[ActivityType.DELETE_INVITATION]: Trash2,
+	[ActivityType.UPDATE_ORG_NAME]: Settings, // Added for org name changes
 }
 
 function getRelativeTime(date: Date) {
@@ -40,7 +41,7 @@ function getRelativeTime(date: Date) {
 	return date.toLocaleDateString()
 }
 
-function formatAction(action: ActivityType): string {
+function formatAction(action: ActivityType, ipAddress?: string): string {
 	switch (action) {
 		case ActivityType.SIGN_UP:
 			return 'You signed up'
@@ -64,6 +65,8 @@ function formatAction(action: ActivityType): string {
 			return 'You accepted an invitation'
 		case ActivityType.DELETE_INVITATION:
 			return 'You deleted an invitation'
+		case ActivityType.UPDATE_ORG_NAME:
+			return `You update the organization name from ${ipAddress || 'unknown'}`
 		default:
 			return 'Unknown action occurred'
 	}
@@ -84,7 +87,8 @@ export default async function ActivityPage() {
 						<ul className="space-y-4">
 							{logs.map(log => {
 								const Icon = iconMap[log.action as ActivityType] || Settings
-								const formattedAction = formatAction(log.action as ActivityType)
+								const formattedAction = formatAction(log.action as ActivityType, log.ipAddress || undefined)
+								const isOrgNameUpdate = log.action === ActivityType.UPDATE_ORG_NAME
 
 								return (
 									<li
@@ -97,7 +101,7 @@ export default async function ActivityPage() {
 										<div className="flex-1">
 											<p className="text-sm font-medium text-gray-900">
 												{formattedAction}
-												{log.ipAddress && ` from IP ${log.ipAddress}`}
+												{!isOrgNameUpdate && log.ipAddress && ` from IP ${log.ipAddress}`}
 											</p>
 											<p className="text-xs text-gray-500">{getRelativeTime(new Date(log.timestamp))}</p>
 										</div>

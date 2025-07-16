@@ -607,7 +607,11 @@ export const updateOrganizationName = validatedActionWithUser(updateOrgNameSchem
 		return { error: 'Not authorized.' }
 	}
 	try {
+		// Fetch the current name directly from the DB to ensure accuracy
+		const [teamRow] = await db.select().from(teams).where(eq(teams.id, team.id)).limit(1)
+		const previousName = teamRow?.name || 'unknown'
 		await updateTeamName(team.id, name)
+		await logActivity(team.id, user.id, ActivityType.UPDATE_ORG_NAME, previousName)
 		return { success: 'Organization name updated successfully.', name }
 	} catch (e: any) {
 		return { error: e.message || 'Failed to update organization name.' }
