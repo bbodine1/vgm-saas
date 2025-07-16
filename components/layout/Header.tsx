@@ -8,7 +8,7 @@ import { useTransition, Suspense } from 'react'
 import { Combobox } from '@/components/ui/combobox'
 import { Button } from '@/components/ui/button'
 import { CircleIcon, Menu, X, Users, Settings, Shield, Activity, LayoutDashboard } from 'lucide-react'
-import { UserMenu } from 'app/(dashboard)/layout'
+import { UserMenu } from '@/components/UserMenu'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 

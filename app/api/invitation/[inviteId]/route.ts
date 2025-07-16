@@ -3,8 +3,9 @@ import { db } from '@/lib/db/drizzle'
 import { invitations, teams } from '@/lib/db/schema'
 import { and, eq } from 'drizzle-orm'
 
-export async function GET(request: NextRequest, { params }: { params: { inviteId: string } }) {
-	const inviteId = parseInt(params.inviteId)
+export async function GET(request: NextRequest, { params }: { params: Promise<{ inviteId: string }> }) {
+	const { inviteId: inviteIdParam } = await params
+	const inviteId = parseInt(inviteIdParam)
 
 	if (isNaN(inviteId)) {
 		return NextResponse.json({ error: 'Invalid invitation ID' }, { status: 400 })
