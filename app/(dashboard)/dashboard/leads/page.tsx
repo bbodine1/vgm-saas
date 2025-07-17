@@ -15,6 +15,9 @@ import {
 	DialogFooter,
 	DialogClose,
 } from '@/components/ui/dialog'
+import { useMemo } from 'react'
+import { ColumnDef, flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 interface Lead {
 	id: number
@@ -116,6 +119,117 @@ export default function LeadsPage() {
 		setLoading(false)
 	}
 
+	// DataTable columns
+	const columns = useMemo<ColumnDef<Lead>[]>(
+		() => [
+			{
+				accessorKey: 'businessName',
+				header: 'Business Name',
+				cell: info => info.getValue(),
+			},
+			{
+				accessorKey: 'firstContactDate',
+				header: 'Date of First Contact',
+				cell: info => (info.getValue() as string)?.slice(0, 10),
+			},
+			{
+				accessorKey: 'decisionMakerName',
+				header: 'Decision Maker',
+				cell: info => info.getValue(),
+			},
+			{
+				accessorKey: 'decisionMakerPhone',
+				header: 'Phone',
+				cell: info => info.getValue(),
+			},
+			{
+				accessorKey: 'medium',
+				header: 'Medium',
+				cell: info => info.getValue(),
+			},
+			{
+				accessorKey: 'completed',
+				header: 'Status',
+				cell: info => (info.row.original.completed ? 'Completed' : 'Open'),
+			},
+			{
+				id: 'actions',
+				header: 'Actions',
+				cell: ({ row }) => {
+					const lead = row.original
+					return (
+						<div className="flex gap-2">
+							{editingId === lead.id ? (
+								<>
+									<Button
+										size="sm"
+										type="button"
+										onClick={handleEditSubmit}
+										disabled={loading}
+									>
+										Save
+									</Button>
+									<Button
+										size="sm"
+										type="button"
+										variant="ghost"
+										onClick={() => {
+											setEditingId(null)
+											setEditForm(null)
+										}}
+									>
+										Cancel
+									</Button>
+								</>
+							) : (
+								<>
+									<Button
+										size="sm"
+										type="button"
+										variant="outline"
+										onClick={() => handleEdit(lead)}
+										disabled={loading || !!lead.completed}
+									>
+										Edit
+									</Button>
+									<Button
+										size="sm"
+										type="button"
+										variant="destructive"
+										onClick={() => handleDelete(lead.id)}
+										disabled={loading}
+									>
+										Delete
+									</Button>
+									{!lead.completed && (
+										<Button
+											size="sm"
+											type="button"
+											variant="secondary"
+											onClick={() => handleMarkCompleted(lead)}
+											disabled={loading}
+										>
+											Mark Completed
+										</Button>
+									)}
+								</>
+							)}
+						</div>
+					)
+				},
+			},
+		],
+		[editingId, editForm, loading]
+	)
+
+	// DataTable instance
+	const table = useReactTable({
+		data: leads,
+		columns,
+		getCoreRowModel: getCoreRowModel(),
+		getPaginationRowModel: getPaginationRowModel(),
+	})
+
 	return (
 		<main className="flex flex-col gap-8 p-4">
 			<h1 className="text-2xl font-bold">Leads</h1>
@@ -186,132 +300,76 @@ export default function LeadsPage() {
 					</DialogContent>
 				</Dialog>
 			</div>
-			<Card className="p-4">
-				<table className="w-full text-left">
-					<thead>
-						<tr>
-							<th>Business Name</th>
-							<th>Date of First Contact</th>
-							<th>Decision Maker</th>
-							<th>Phone</th>
-							<th>Medium</th>
-							<th>Status</th>
-							<th>Actions</th>
-						</tr>
-					</thead>
-					<tbody>
-						{leads.map((lead: Lead) => (
-							<tr
-								key={lead.id}
-								className={lead.completed ? 'opacity-50' : ''}
-							>
-								{editingId === lead.id ? (
-									<>
-										<td>
-											<Input
-												name="businessName"
-												value={editForm?.businessName || ''}
-												onChange={handleEditChange}
-											/>
-										</td>
-										<td>
-											<Input
-												name="firstContactDate"
-												type="date"
-												value={editForm?.firstContactDate || ''}
-												onChange={handleEditChange}
-											/>
-										</td>
-										<td>
-											<Input
-												name="decisionMakerName"
-												value={editForm?.decisionMakerName || ''}
-												onChange={handleEditChange}
-											/>
-										</td>
-										<td>
-											<Input
-												name="decisionMakerPhone"
-												value={editForm?.decisionMakerPhone || ''}
-												onChange={handleEditChange}
-											/>
-										</td>
-										<td>
-											<Input
-												name="medium"
-												value={editForm?.medium || ''}
-												onChange={handleEditChange}
-											/>
-										</td>
-										<td>{lead.completed ? 'Completed' : 'Open'}</td>
-										<td>
-											<Button
-												size="sm"
-												type="button"
-												onClick={handleEditSubmit}
-												disabled={loading}
-											>
-												Save
-											</Button>
-											<Button
-												size="sm"
-												type="button"
-												variant="ghost"
-												onClick={() => {
-													setEditingId(null)
-													setEditForm(null)
-												}}
-											>
-												Cancel
-											</Button>
-										</td>
-									</>
-								) : (
-									<>
-										<td>{lead.businessName}</td>
-										<td>{lead.firstContactDate?.slice(0, 10)}</td>
-										<td>{lead.decisionMakerName}</td>
-										<td>{lead.decisionMakerPhone}</td>
-										<td>{lead.medium}</td>
-										<td>{lead.completed ? 'Completed' : 'Open'}</td>
-										<td className="flex gap-2">
-											<Button
-												size="sm"
-												type="button"
-												variant="outline"
-												onClick={() => handleEdit(lead)}
-												disabled={loading || !!lead.completed}
-											>
-												Edit
-											</Button>
-											<Button
-												size="sm"
-												type="button"
-												variant="destructive"
-												onClick={() => handleDelete(lead.id)}
-												disabled={loading}
-											>
-												Delete
-											</Button>
-											{!lead.completed && (
-												<Button
-													size="sm"
-													type="button"
-													variant="secondary"
-													onClick={() => handleMarkCompleted(lead)}
-													disabled={loading}
-												>
-													Mark Completed
-												</Button>
-											)}
-										</td>
-									</>
-								)}
-							</tr>
+			<div className="rounded-md border">
+				<Table>
+					<TableHeader>
+						{table.getHeaderGroups().map(headerGroup => (
+							<TableRow key={headerGroup.id}>
+								{headerGroup.headers.map(header => (
+									<TableHead key={header.id}>
+										{header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+									</TableHead>
+								))}
+							</TableRow>
 						))}
-					</tbody>
-				</table>
-			</Card>
+					</TableHeader>
+					<TableBody>
+						{table.getRowModel().rows.length ? (
+							table.getRowModel().rows.map(row => (
+								<TableRow
+									key={row.id}
+									className={row.original.completed ? 'opacity-50' : ''}
+								>
+									{row.getVisibleCells().map(cell => (
+										<TableCell key={cell.id}>
+											{editingId === row.original.id && cell.column.id !== 'actions'
+												? (() => {
+														const col = cell.column.id
+														if (
+															col === 'businessName' ||
+															col === 'decisionMakerName' ||
+															col === 'decisionMakerPhone' ||
+															col === 'medium'
+														) {
+															return (
+																<Input
+																	name={col}
+																	value={editForm?.[col] || ''}
+																	onChange={handleEditChange}
+																/>
+															)
+														}
+														if (col === 'firstContactDate') {
+															return (
+																<Input
+																	name="firstContactDate"
+																	type="date"
+																	value={editForm?.firstContactDate || ''}
+																	onChange={handleEditChange}
+																/>
+															)
+														}
+														return String(cell.getValue())
+												  })()
+												: flexRender(cell.column.columnDef.cell, cell.getContext())}
+										</TableCell>
+									))}
+								</TableRow>
+							))
+						) : (
+							<TableRow>
+								<TableCell
+									colSpan={columns.length}
+									className="h-24 text-center"
+								>
+									No results.
+								</TableCell>
+							</TableRow>
+						)}
+					</TableBody>
+				</Table>
+			</div>
+			{/* Optionally, add pagination controls here */}
 		</main>
 	)
 }
