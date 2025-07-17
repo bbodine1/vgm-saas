@@ -1,6 +1,6 @@
 import { stripe } from '../payments/stripe'
 import { db } from './drizzle'
-import { users, teams, teamMembers } from './schema'
+import { users, teams, teamMembers, leads } from './schema'
 import { hashPassword } from '@/lib/auth/session'
 import { eq } from 'drizzle-orm'
 
@@ -90,25 +90,62 @@ async function seed() {
 		})
 	}
 
-	// Check if the super admin user exists
-	const superAdminEmail = 'superadmin@test.com'
-	const existingSuperAdmin = await db.select().from(users).where(eq(users.email, superAdminEmail)).limit(1)
+	// Create two test organizations and owners
+	const orgs = [
+		{ name: 'Test Org 1', email: 'owner1@test.com', password: 'owner123' },
+		{ name: 'Test Org 2', email: 'owner2@test.com', password: 'owner123' },
+	]
 
-	if (existingSuperAdmin.length === 0) {
-		await db
+	for (const org of orgs) {
+		const passwordHash = await hashPassword(org.password)
+		// Create owner user
+		let [ownerUser] = await db
 			.insert(users)
-			.values([
-				{
-					email: superAdminEmail,
-					passwordHash: await hashPassword('superadmin123'),
-					role: 'super_admin',
-				},
-			])
+			.values({
+				email: org.email,
+				passwordHash,
+				role: 'owner',
+			})
+			.onConflictDoNothing()
 			.returning()
+		if (!ownerUser) {
+			// If user already exists, fetch it
+			ownerUser = (await db.select().from(users).where(eq(users.email, org.email)).limit(1))[0]
+		}
+		// Create org
+		let [team] = await db.insert(teams).values({ name: org.name }).onConflictDoNothing().returning()
+		if (!team) {
+			team = (await db.select().from(teams).where(eq(teams.name, org.name)).limit(1))[0]
+		}
+		// Associate owner with org
+		const existingTeamMember = await db.select().from(teamMembers).where(eq(teamMembers.userId, ownerUser.id)).limit(1)
+		if (existingTeamMember.length === 0) {
+			await db.insert(teamMembers).values({
+				teamId: team.id,
+				userId: ownerUser.id,
+				role: 'owner',
+			})
+		}
+
+		// Add 6 test leads for this org
+		for (let i = 1; i <= 6; i++) {
+			await db.insert(leads).values({
+				businessName: `TEST Lead ${i} for ${org.name}`,
+				firstContactDate: new Date(),
+				decisionMakerName: `Test Contact ${i}`,
+				decisionMakerPhone: `555-000${i}`,
+				medium: 'TEST',
+				completed: 0,
+				teamId: team.id,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+		}
 	}
 
-	// Add an admin user (same privileges as super admin except cannot update/delete super admins)
+	// Add admin user
 	const adminEmail = 'admin@test.com'
+	const adminPassword = 'admin123'
 	const existingAdmin = await db.select().from(users).where(eq(users.email, adminEmail)).limit(1)
 	if (existingAdmin.length === 0) {
 		await db
@@ -116,8 +153,25 @@ async function seed() {
 			.values([
 				{
 					email: adminEmail,
-					passwordHash: await hashPassword('admin123'),
+					passwordHash: await hashPassword(adminPassword),
 					role: 'admin',
+				},
+			])
+			.returning()
+	}
+
+	// Add super admin user
+	const superAdminEmail = 'super@test.com'
+	const superAdminPassword = 'superadmin123'
+	const existingSuper = await db.select().from(users).where(eq(users.email, superAdminEmail)).limit(1)
+	if (existingSuper.length === 0) {
+		await db
+			.insert(users)
+			.values([
+				{
+					email: superAdminEmail,
+					passwordHash: await hashPassword(superAdminPassword),
+					role: 'super_admin',
 				},
 			])
 			.returning()

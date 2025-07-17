@@ -68,6 +68,20 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
 	}
 
 	await setSession(foundUser)
+
+	// For regular users, set their first team as active team
+	if (foundUser.role !== 'admin' && foundUser.role !== 'super_admin') {
+		const firstTeam = await db.query.teamMembers.findFirst({
+			where: eq(teamMembers.userId, foundUser.id),
+			with: {
+				team: true,
+			},
+		})
+		if (firstTeam?.team) {
+			await setSession(foundUser, firstTeam.team.id)
+		}
+	}
+
 	const team = await getTeamForUser()
 	await logActivity(team?.id, foundUser.id, ActivityType.SIGN_IN)
 

@@ -14,6 +14,7 @@ import {
 	DialogTitle,
 	DialogFooter,
 	DialogClose,
+	DialogDescription,
 } from '@/components/ui/dialog'
 import { useMemo } from 'react'
 import { ColumnDef, flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
@@ -42,7 +43,7 @@ const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function LeadsPage() {
 	const { teamId } = useContext(TeamContext)
-	const { data: leads = [], mutate } = useSWR<Lead[]>(teamId ? ['/api/leads', teamId] : null, ([url]) => fetcher(url))
+	const { data: leads = [], mutate } = useSWR<Lead[]>(teamId ? `/api/leads?teamId=${teamId}` : null, fetcher)
 	const [form, setForm] = useState({
 		businessName: '',
 		firstContactDate: '',
@@ -166,6 +167,34 @@ export default function LeadsPage() {
 				header: 'Actions',
 				cell: ({ row }) => {
 					const lead = row.original
+
+					// Show save/cancel buttons when editing this row
+					if (editingId === lead.id) {
+						return (
+							<div className="flex gap-2">
+								<Button
+									size="sm"
+									onClick={handleEditSubmit}
+									disabled={loading}
+								>
+									{loading ? 'Saving...' : 'Save'}
+								</Button>
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={() => {
+										setEditingId(null)
+										setEditForm(null)
+									}}
+									disabled={loading}
+								>
+									Cancel
+								</Button>
+							</div>
+						)
+					}
+
+					// Show normal dropdown menu when not editing
 					return (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
@@ -235,6 +264,7 @@ export default function LeadsPage() {
 					<DialogContent className="sm:max-w-[425px]">
 						<DialogHeader>
 							<DialogTitle>Add New Lead</DialogTitle>
+							<DialogDescription>Fill out the form below to add a new lead to your organization.</DialogDescription>
 						</DialogHeader>
 						<form
 							onSubmit={handleSubmit}

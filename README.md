@@ -1,139 +1,191 @@
-# Next.js SaaS Starter
+# VGM SaaS Starter
 
-This is a starter template for building a SaaS application using **Next.js** with support for authentication, Stripe integration for payments, and a dashboard for logged-in users.
-
-**Demo: [https://next-saas-start.vercel.app/](https://next-saas-start.vercel.app/)**
+A comprehensive SaaS starter template built with **Next.js** featuring authentication, Stripe payments, lead management, and team collaboration.
 
 ## Features
 
-- Marketing landing page (`/`) with animated Terminal element
-- Pricing page (`/pricing`) which connects to Stripe Checkout
-- Dashboard pages with CRUD operations on users/teams
-- Basic RBAC with Owner and Member roles
-- Subscription management with Stripe Customer Portal
-- Email/password authentication with JWTs stored to cookies
-- Global middleware to protect logged-in routes
-- Local middleware to protect Server Actions or validate Zod schemas
-- Activity logging system for any user events
+- **Authentication & Authorization**: Email/password auth with JWT sessions and role-based access control
+- **Team Management**: Multi-tenant organizations with member invitations and role management
+- **Lead Management**: CRUD operations for leads with team-based data isolation
+- **Payment Integration**: Stripe Checkout and Customer Portal for subscription management
+- **Activity Logging**: Comprehensive audit trail for all user actions
+- **Modern UI**: Built with shadcn/ui components and Tailwind CSS
+- **Database**: PostgreSQL with Drizzle ORM for type-safe database operations
 
 ## Tech Stack
 
-- **Framework**: [Next.js](https://nextjs.org/)
-- **Database**: [Postgres](https://www.postgresql.org/)
-- **ORM**: [Drizzle](https://orm.drizzle.team/)
-- **Payments**: [Stripe](https://stripe.com/)
-- **UI Library**: [shadcn/ui](https://ui.shadcn.com/)
+- **Framework**: [Next.js 15](https://nextjs.org/) with App Router
+- **Database**: [PostgreSQL](https://www.postgresql.org/) with [Drizzle ORM](https://orm.drizzle.team/)
+- **Payments**: [Stripe](https://stripe.com/) for subscriptions and billing
+- **UI**: [shadcn/ui](https://ui.shadcn.com/) components with [Tailwind CSS](https://tailwindcss.com/)
+- **Authentication**: Custom JWT-based auth with bcrypt password hashing
+- **Deployment**: Optimized for [Vercel](https://vercel.com/)
 
-## Getting Started
+## Quick Start
 
-```bash
-git clone https://github.com/nextjs/saas-starter
-cd saas-starter
-pnpm install
-```
+### Prerequisites
 
-## Running Locally
+- Node.js 18+
+- PostgreSQL database (local or cloud)
+- Stripe account for payments
 
-[Install](https://docs.stripe.com/stripe-cli) and log in to your Stripe account:
+### Installation
 
-```bash
-stripe login
-```
+1. **Clone and install dependencies:**
 
-Use the included setup script to create your `.env` file:
+   ```bash
+   git clone <your-repo-url>
+   cd vgm-saas
+   pnpm install
+   ```
 
-```bash
-pnpm db:setup
-```
+2. **Set up environment variables:**
+   Create a `.env` file in the root directory:
 
-Run the database migrations and seed the database with a default user and team:
+   ```env
+   POSTGRES_URL=postgresql://username:password@host:port/database
+   AUTH_SECRET=your-secret-key-here
+   STRIPE_SECRET_KEY=sk_test_...
+   STRIPE_WEBHOOK_SECRET=whsec_...
+   BASE_URL=http://localhost:3000
+   ```
 
-```bash
-pnpm db:migrate
-pnpm db:seed
-```
+3. **Set up the database:**
 
-This will create the following users and team:
+   ```bash
+   # Run migrations
+   pnpm db:migrate
 
-- User: `test@test.com` (Owner of organization "Test Team")
-- Password: `admin123`
-- Super Admin: `superadmin@test.com` (not associated with any organization)
-- Password: `superadmin123`
+   # Reset database with test data
+   npx tsx lib/db/reset.ts
+   ```
 
-- Admin: `admin@test.com` (not associated with any organization)
-- Password: `admin123`
+4. **Start the development server:**
 
-You can also create new users through the `/sign-up` route.
+   ```bash
+   pnpm dev
+   ```
 
-## Organization Requirements
+5. **Access the application:**
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-When signing up, users must name the organization (team) they are creating. The organization name must be unique, between 4 and 20 characters. All users must be associated with at least one organization, except users with the role of admin or super admin.
+## Database Management
 
-You can also create new users through the `/sign-up` route. The sign-up form will require an organization name that meets the above requirements.
+### Reset Database
 
-## Roles
-
-- **Owner**: Full rights within their organization. Can manage members and settings for their org.
-- **Member**: Default for invited users. View-only rights within their organization.
-- **Admin**: Global admin. Has all privileges of Super Admin except cannot update or delete Super Admin users. Not associated with any organization.
-- **Super Admin**: Application administrator. Full rights to all organizations and users. Not associated with any organization.
-
-**Note:** Only users with the "owner", "admin", or "super_admin" roles can manage organizations. Only "super_admin" can update or delete other super admins.
-
-Finally, run the Next.js development server:
+To reset your database to a clean state with test data:
 
 ```bash
-pnpm dev
+npx tsx lib/db/reset.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the app in action.
+### Manual Seeding
 
-You can listen for Stripe webhooks locally through their CLI to handle subscription change events:
+To run the seed script without resetting:
+
+```bash
+npx tsx lib/db/seed.ts
+```
+
+## User Roles & Permissions
+
+### Role Hierarchy
+
+- **Super Admin**: Full system access, can manage all users and organizations
+- **Admin**: Global admin access, cannot modify super admins
+- **Owner**: Full access within their organization, can manage team members
+- **Member**: View-only access within their organization
+
+### Organization Management
+
+- Users must be associated with at least one organization (except admins)
+- Organization names must be unique and 4-20 characters
+- Owners can invite new members and manage team settings
+
+### Test Accounts
+
+The database comes with pre-configured test accounts for development and testing purposes. These accounts are created when you run the database reset script (see Database Management section below).
+
+#### Organization Owners
+
+- **Test Org 1**: `owner1@test.com` / `owner123`
+- **Test Org 2**: `owner2@test.com` / `owner123`
+
+#### Admin Users
+
+- **Admin**: `admin@test.com` / `admin123`
+- **Super Admin**: `super@test.com` / `superadmin123`
+
+#### Test Data
+
+Each organization comes with 6 sample leads marked as "TEST" for easy identification and testing.
+
+## Stripe Integration
+
+### Test Mode
+
+Use these test card details:
+
+- **Card Number**: `4242 4242 4242 4242`
+- **Expiration**: Any future date
+- **CVC**: Any 3-digit number
+
+### Webhook Setup
+
+For local development:
 
 ```bash
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
-## Testing Payments
+## Production Deployment
 
-To test Stripe payments, use the following test card details:
+### Environment Variables
 
-- Card Number: `4242 4242 4242 4242`
-- Expiration: Any future date
-- CVC: Any 3-digit number
+Ensure these are set in production:
 
-## Going to Production
+- `POSTGRES_URL`: Production database connection string
+- `AUTH_SECRET`: Secure random string for JWT signing
+- `STRIPE_SECRET_KEY`: Production Stripe secret key
+- `STRIPE_WEBHOOK_SECRET`: Production webhook secret
+- `BASE_URL`: Your production domain
 
-When you're ready to deploy your SaaS application to production, follow these steps:
+### Vercel Deployment
 
-### Set up a production Stripe webhook
+1. Connect your repository to Vercel
+2. Add environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
 
-1. Go to the Stripe Dashboard and create a new webhook for your production environment.
-2. Set the endpoint URL to your production API route (e.g., `https://yourdomain.com/api/stripe/webhook`).
-3. Select the events you want to listen for (e.g., `checkout.session.completed`, `customer.subscription.updated`).
+### Database Setup
 
-### Deploy to Vercel
+1. Set up a production PostgreSQL database
+2. Run migrations: `pnpm db:migrate`
+3. Optionally seed with initial data: `npx tsx lib/db/seed.ts`
 
-1. Push your code to a GitHub repository.
-2. Connect your repository to [Vercel](https://vercel.com/) and deploy it.
-3. Follow the Vercel deployment process, which will guide you through setting up your project.
+## Project Structure
 
-### Add environment variables
+```
+├── app/                    # Next.js App Router pages
+│   ├── (dashboard)/       # Protected dashboard routes
+│   ├── (login)/          # Authentication pages
+│   ├── api/              # API routes
+│   └── settings/         # User settings pages
+├── components/           # Reusable UI components
+├── lib/                  # Utility libraries
+│   ├── auth/            # Authentication logic
+│   ├── db/              # Database configuration
+│   └── payments/        # Stripe integration
+└── middleware.ts        # Route protection
+```
 
-In your Vercel project settings (or during deployment), add all the necessary environment variables. Make sure to update the values for the production environment, including:
+## Contributing
 
-1. `BASE_URL`: Set this to your production domain.
-2. `STRIPE_SECRET_KEY`: Use your Stripe secret key for the production environment.
-3. `STRIPE_WEBHOOK_SECRET`: Use the webhook secret from the production webhook you created in step 1.
-4. `POSTGRES_URL`: Set this to your production database URL.
-5. `AUTH_SECRET`: Set this to a random string. `openssl rand -base64 32` will generate one.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-## Other Templates
+## License
 
-While this template is intentionally minimal and to be used as a learning resource, there are other paid versions in the community which are more full-featured:
-
-- https://achromatic.dev
-- https://shipfa.st
-- https://makerkit.dev
-- https://zerotoshipped.com
-- https://turbostarter.dev
+This project is licensed under the MIT License.

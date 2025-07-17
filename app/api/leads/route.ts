@@ -6,14 +6,30 @@ import { getSession } from '@/lib/auth/session'
 import { eq, and } from 'drizzle-orm'
 
 // List all leads for the current team
-export async function GET() {
-	const user = await getUser()
-	if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-	const session = await getSession()
-	const teamId = session?.activeTeamId
-	if (!teamId) return NextResponse.json({ error: 'No active team' }, { status: 400 })
-	const allLeads = await db.select().from(leads).where(eq(leads.teamId, teamId))
-	return NextResponse.json(allLeads)
+export async function GET(request: NextRequest) {
+	try {
+		const user = await getUser()
+		if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
+		const { searchParams } = new URL(request.url)
+		const teamIdParam = searchParams.get('teamId')
+		let teamId = teamIdParam ? Number(teamIdParam) : null
+
+		if (!teamId) {
+			const session = await getSession()
+			teamId = session?.activeTeamId ?? null
+		}
+
+		if (!teamId) return NextResponse.json({ error: 'No active team' }, { status: 400 })
+
+		console.log('Fetching leads for teamId:', teamId)
+		const allLeads = await db.select().from(leads).where(eq(leads.teamId, teamId))
+		console.log('Leads fetched:', allLeads.length)
+		return NextResponse.json(allLeads)
+	} catch (error) {
+		console.error('Error in /api/leads GET:', error)
+		return NextResponse.json({ error: 'Database error' }, { status: 500 })
+	}
 }
 
 // Create a new lead
