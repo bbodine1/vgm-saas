@@ -138,12 +138,10 @@ export default function GeneralPageClient({ team, user }: GeneralPageClientProps
 						className="space-y-4"
 						action={formAction}
 					>
-						<Suspense fallback={<AccountForm state={state} />}>
-							<AccountFormWithData
-								state={state}
-								user={user}
-							/>
-						</Suspense>
+						<AccountFormWithData
+							state={state}
+							user={user}
+						/>
 						{state.error && <p className="text-red-500 text-sm">{state.error}</p>}
 						{state.success && <p className="text-green-500 text-sm">{state.success}</p>}
 						<Button

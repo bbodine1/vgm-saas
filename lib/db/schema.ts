@@ -70,6 +70,28 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
 	expiresAt: timestamp('expires_at').notNull(),
 })
 
+export const leads = pgTable('leads', {
+	id: serial('id').primaryKey(),
+	businessName: varchar('business_name', { length: 255 }).notNull(),
+	firstContactDate: timestamp('first_contact_date').notNull(),
+	decisionMakerName: varchar('decision_maker_name', { length: 255 }).notNull(),
+	decisionMakerPhone: varchar('decision_maker_phone', { length: 50 }),
+	medium: varchar('medium', { length: 100 }),
+	completed: integer('completed').notNull().default(0), // 0 = false, 1 = true
+	teamId: integer('team_id')
+		.notNull()
+		.references(() => teams.id),
+	createdAt: timestamp('created_at').notNull().defaultNow(),
+	updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
+export const leadsRelations = relations(leads, ({ one }) => ({
+	team: one(teams, {
+		fields: [leads.teamId],
+		references: [teams.id],
+	}),
+}))
+
 export const teamsRelations = relations(teams, ({ many }) => ({
 	teamMembers: many(teamMembers),
 	activityLogs: many(activityLogs),
@@ -136,6 +158,9 @@ export type TeamDataWithMembers = Team & {
 		user: Pick<User, 'id' | 'name' | 'email'>
 	})[]
 }
+
+export type Lead = typeof leads.$inferSelect
+export type NewLead = typeof leads.$inferInsert
 
 export enum ActivityType {
 	SIGN_UP = 'SIGN_UP',

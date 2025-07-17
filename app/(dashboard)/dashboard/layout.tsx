@@ -2,12 +2,14 @@
 
 import Link from 'next/link'
 import useSWR, { mutate } from 'swr'
-import { useState, useTransition } from 'react'
+import { useState, useTransition, createContext } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Users, Settings, Shield, Activity, Home } from 'lucide-react'
+import { Users, Settings, Shield, Activity, Home, Briefcase } from 'lucide-react'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
+
+export const TeamContext = createContext<{ teamId: number | null }>({ teamId: null })
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname()
@@ -18,7 +20,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	const { data: currentTeam } = useSWR('/api/team', fetcher)
 	const { data: allTeams } = useSWR('/api/team', fetcher)
 
-	const navItems = [{ href: '/dashboard', icon: Home, label: 'Dashboard' }]
+	const navItems = [
+		{ href: '/dashboard', icon: Home, label: 'Dashboard' },
+		{ href: '/dashboard/leads', icon: Briefcase, label: 'Leads' },
+	]
 
 	async function handleSwitchTeam(value: string | number) {
 		const teamId = typeof value === 'string' ? parseInt(value, 10) : value
@@ -35,38 +40,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	}
 
 	return (
-		<div className="flex flex-col min-h-[calc(100dvh-68px)] max-w-7xl mx-auto w-full">
-			<div className="flex flex-1 overflow-hidden h-full">
-				{/* Sidebar */}
-				<aside
-					className={`w-64 bg-white lg:bg-gray-50 border-r border-gray-200 lg:block ${
-						isSidebarOpen ? 'block' : 'hidden'
-					} lg:relative absolute inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-						isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-					}`}
-				>
-					<nav className="h-full overflow-y-auto p-4">
-						{navItems.map(item => (
-							<Link
-								key={item.href}
-								href={item.href}
-								passHref
-							>
-								<Button
-									variant={pathname === item.href ? 'secondary' : 'ghost'}
-									className={`shadow-none my-1 w-full justify-start ${pathname === item.href ? 'bg-gray-100' : ''}`}
-									onClick={() => setIsSidebarOpen(false)}
+		<TeamContext.Provider value={{ teamId: currentTeam?.id ?? null }}>
+			<div className="flex flex-col min-h-[calc(100dvh-68px)] max-w-7xl mx-auto w-full">
+				<div className="flex flex-1 overflow-hidden h-full">
+					{/* Sidebar */}
+					<aside
+						className={`w-64 bg-white lg:bg-gray-50 border-r border-gray-200 lg:block ${
+							isSidebarOpen ? 'block' : 'hidden'
+						} lg:relative absolute inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+							isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+						}`}
+					>
+						<nav className="h-full overflow-y-auto p-4">
+							{navItems.map(item => (
+								<Link
+									key={item.href}
+									href={item.href}
+									passHref
 								>
-									<item.icon className="h-4 w-4" />
-									{item.label}
-								</Button>
-							</Link>
-						))}
-					</nav>
-				</aside>
-				{/* Main content */}
-				<main className="flex-1 overflow-y-auto p-0 lg:p-4">{children}</main>
+									<Button
+										variant={pathname === item.href ? 'secondary' : 'ghost'}
+										className={`shadow-none my-1 w-full justify-start ${pathname === item.href ? 'bg-gray-100' : ''}`}
+										onClick={() => setIsSidebarOpen(false)}
+									>
+										<item.icon className="h-4 w-4" />
+										{item.label}
+									</Button>
+								</Link>
+							))}
+						</nav>
+					</aside>
+					{/* Main content */}
+					<main className="flex-1 overflow-y-auto p-0 lg:p-4">{children}</main>
+				</div>
 			</div>
-		</div>
+		</TeamContext.Provider>
 	)
 }
