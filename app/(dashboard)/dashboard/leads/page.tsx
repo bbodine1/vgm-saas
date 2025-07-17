@@ -18,6 +18,15 @@ import {
 import { useMemo } from 'react'
 import { ColumnDef, flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { MoreHorizontal } from 'lucide-react'
+import {
+	DropdownMenu,
+	DropdownMenuTrigger,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
 
 interface Lead {
 	id: number
@@ -158,63 +167,48 @@ export default function LeadsPage() {
 				cell: ({ row }) => {
 					const lead = row.original
 					return (
-						<div className="flex gap-2">
-							{editingId === lead.id ? (
-								<>
-									<Button
-										size="sm"
-										type="button"
-										onClick={handleEditSubmit}
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									className="h-8 w-8 p-0"
+								>
+									<span className="sr-only">Open menu</span>
+									<MoreHorizontal className="h-4 w-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuLabel>Actions</DropdownMenuLabel>
+								<DropdownMenuItem
+									onClick={() => {
+										navigator.clipboard.writeText(String(lead.id))
+									}}
+								>
+									Copy Lead ID
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									onClick={() => handleEdit(lead)}
+									disabled={loading || !!lead.completed}
+								>
+									Edit
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => handleDelete(lead.id)}
+									disabled={loading}
+								>
+									Delete
+								</DropdownMenuItem>
+								{!lead.completed && (
+									<DropdownMenuItem
+										onClick={() => handleMarkCompleted(lead)}
 										disabled={loading}
 									>
-										Save
-									</Button>
-									<Button
-										size="sm"
-										type="button"
-										variant="ghost"
-										onClick={() => {
-											setEditingId(null)
-											setEditForm(null)
-										}}
-									>
-										Cancel
-									</Button>
-								</>
-							) : (
-								<>
-									<Button
-										size="sm"
-										type="button"
-										variant="outline"
-										onClick={() => handleEdit(lead)}
-										disabled={loading || !!lead.completed}
-									>
-										Edit
-									</Button>
-									<Button
-										size="sm"
-										type="button"
-										variant="destructive"
-										onClick={() => handleDelete(lead.id)}
-										disabled={loading}
-									>
-										Delete
-									</Button>
-									{!lead.completed && (
-										<Button
-											size="sm"
-											type="button"
-											variant="secondary"
-											onClick={() => handleMarkCompleted(lead)}
-											disabled={loading}
-										>
-											Mark Completed
-										</Button>
-									)}
-								</>
-							)}
-						</div>
+										Mark Completed
+									</DropdownMenuItem>
+								)}
+							</DropdownMenuContent>
+						</DropdownMenu>
 					)
 				},
 			},
