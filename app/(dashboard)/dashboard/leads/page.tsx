@@ -6,6 +6,15 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { TeamContext } from '../layout'
+import {
+	Dialog,
+	DialogTrigger,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogFooter,
+	DialogClose,
+} from '@/components/ui/dialog'
 
 interface Lead {
 	id: number
@@ -110,53 +119,73 @@ export default function LeadsPage() {
 	return (
 		<main className="flex flex-col gap-8 p-4">
 			<h1 className="text-2xl font-bold">Leads</h1>
-			<Card className="p-4 max-w-xl">
-				<form
-					onSubmit={handleSubmit}
-					className="flex flex-col gap-4"
-				>
-					<Input
-						name="businessName"
-						placeholder="Business Name"
-						value={form.businessName}
-						onChange={handleChange}
-						required
-					/>
-					<Input
-						name="firstContactDate"
-						type="date"
-						placeholder="Date of First Contact"
-						value={form.firstContactDate}
-						onChange={handleChange}
-						required
-					/>
-					<Input
-						name="decisionMakerName"
-						placeholder="Decision Maker Name"
-						value={form.decisionMakerName}
-						onChange={handleChange}
-						required
-					/>
-					<Input
-						name="decisionMakerPhone"
-						placeholder="Decision Maker Phone"
-						value={form.decisionMakerPhone}
-						onChange={handleChange}
-					/>
-					<Input
-						name="medium"
-						placeholder="Medium"
-						value={form.medium}
-						onChange={handleChange}
-					/>
-					<Button
-						type="submit"
-						disabled={loading}
-					>
-						{loading ? 'Adding...' : 'Add Lead'}
-					</Button>
-				</form>
-			</Card>
+			<div className="mb-4">
+				<Dialog>
+					<DialogTrigger asChild>
+						<Button variant="default">Add Lead</Button>
+					</DialogTrigger>
+					<DialogContent className="sm:max-w-[425px]">
+						<DialogHeader>
+							<DialogTitle>Add New Lead</DialogTitle>
+						</DialogHeader>
+						<form
+							onSubmit={handleSubmit}
+							className="flex flex-col gap-4"
+						>
+							<Input
+								name="businessName"
+								placeholder="Business Name"
+								value={form.businessName}
+								onChange={handleChange}
+								required
+							/>
+							<Input
+								name="firstContactDate"
+								type="date"
+								placeholder="Date of First Contact"
+								value={form.firstContactDate}
+								onChange={handleChange}
+								required
+							/>
+							<Input
+								name="decisionMakerName"
+								placeholder="Decision Maker Name"
+								value={form.decisionMakerName}
+								onChange={handleChange}
+								required
+							/>
+							<Input
+								name="decisionMakerPhone"
+								placeholder="Decision Maker Phone"
+								value={form.decisionMakerPhone}
+								onChange={handleChange}
+							/>
+							<Input
+								name="medium"
+								placeholder="Medium"
+								value={form.medium}
+								onChange={handleChange}
+							/>
+							<DialogFooter>
+								<DialogClose asChild>
+									<Button
+										type="button"
+										variant="outline"
+									>
+										Cancel
+									</Button>
+								</DialogClose>
+								<Button
+									type="submit"
+									disabled={loading}
+								>
+									{loading ? 'Adding...' : 'Add Lead'}
+								</Button>
+							</DialogFooter>
+						</form>
+					</DialogContent>
+				</Dialog>
+			</div>
 			<Card className="p-4">
 				<table className="w-full text-left">
 					<thead>
