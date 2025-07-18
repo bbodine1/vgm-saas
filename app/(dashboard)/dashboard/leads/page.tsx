@@ -87,11 +87,18 @@ const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function LeadsPage() {
 	const { teamId } = useContext(TeamContext)
-	const { data: leads = [], mutate } = useSWR<Lead[]>(teamId ? `/api/leads?teamId=${teamId}` : null, fetcher, {
+	const {
+		data: leads = [],
+		mutate,
+		isLoading: leadsLoading,
+	} = useSWR<Lead[]>(teamId ? `/api/leads?teamId=${teamId}` : null, fetcher, {
 		revalidateOnFocus: false,
 		revalidateOnReconnect: false,
 	})
-	const { data: leadSources = [] } = useSWR<LeadSource[]>(teamId ? `/api/lead-sources?teamId=${teamId}` : null, fetcher)
+	const { data: leadSources = [], isLoading: sourcesLoading } = useSWR<LeadSource[]>(
+		teamId ? `/api/lead-sources?teamId=${teamId}` : null,
+		fetcher
+	)
 
 	const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([])
 	const [loading, setLoading] = useState(false)
@@ -570,7 +577,9 @@ export default function LeadsPage() {
 					</Button>
 				)}
 			</div>
-			{leads.length > 0 && currentPageLeads.length > 0 ? (
+			{leadsLoading ? (
+				<div className="flex justify-center items-center h-32">Loading leads...</div>
+			) : leads.length > 0 ? (
 				<>
 					<div className="rounded-md border">
 						<Table>
@@ -645,7 +654,9 @@ export default function LeadsPage() {
 					</div>
 				</>
 			) : (
-				<div className="flex justify-center items-center h-32">Loading leads...</div>
+				<div className="flex justify-center items-center h-32 text-gray-500">
+					No leads found. Add your first lead using the button above.
+				</div>
 			)}
 			{/* Add Edit Dialog after the Add Dialog */}
 			<Dialog
