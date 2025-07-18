@@ -23,6 +23,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useMemo } from 'react'
 import {
 	ColumnDef,
@@ -34,7 +36,7 @@ import {
 	useReactTable,
 } from '@tanstack/react-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon } from 'lucide-react'
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -45,6 +47,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Textarea } from '@/components/ui/textarea'
+import { format } from 'date-fns'
+import { cn } from '@/lib/utils'
 
 interface Lead {
 	id: number
@@ -62,7 +67,6 @@ interface Lead {
 
 interface EditFormData {
 	leadSource: string
-	dateReceived: string
 	contactName: string
 	emailAddress: string
 	phoneNumber: string
@@ -107,6 +111,8 @@ export default function LeadsPage() {
 	const [editForm, setEditForm] = useState<EditFormData | null>(null)
 	const [editDialogOpen, setEditDialogOpen] = useState(false)
 	const [sorting, setSorting] = useState<SortingState>([])
+	const [followUpDate, setFollowUpDate] = useState<Date | undefined>(undefined)
+	const [originalLead, setOriginalLead] = useState<Lead | null>(null)
 
 	// Helper function to render sortable headers
 	const SortableHeader = ({ column, children }: { column: any; children: React.ReactNode }) => {
@@ -330,9 +336,10 @@ export default function LeadsPage() {
 
 	const handleEdit = (lead: Lead) => {
 		setEditingId(lead.id)
+		setOriginalLead(lead)
+		setFollowUpDate(lead.followUpDate ? new Date(lead.followUpDate) : undefined)
 		setEditForm({
 			leadSource: lead.leadSource || '',
-			dateReceived: lead.dateReceived ? lead.dateReceived.slice(0, 10) : '',
 			contactName: lead.contactName,
 			emailAddress: lead.emailAddress || '',
 			phoneNumber: lead.phoneNumber || '',
@@ -353,6 +360,7 @@ export default function LeadsPage() {
 		const requestBody = {
 			id: editingId,
 			...editForm,
+			followUpDate: followUpDate ? followUpDate.toISOString().split('T')[0] : '',
 			potentialValue: editForm.potentialValue ? Number(editForm.potentialValue) : null,
 		}
 
@@ -370,6 +378,8 @@ export default function LeadsPage() {
 
 			setEditingId(null)
 			setEditForm(null)
+			setOriginalLead(null)
+			setFollowUpDate(undefined)
 			setEditDialogOpen(false)
 		} else {
 			const errorData = await res.json()
@@ -647,6 +657,15 @@ export default function LeadsPage() {
 						<DialogTitle>Edit Lead</DialogTitle>
 						<DialogDescription>Update the lead information below.</DialogDescription>
 					</DialogHeader>
+					{/* Meta section showing date received */}
+					{originalLead && (
+						<div className="mb-4 p-3 bg-gray-50 rounded-lg">
+							<div className="text-sm text-gray-600">
+								<strong>Date Received:</strong>{' '}
+								{originalLead.dateReceived ? format(new Date(originalLead.dateReceived), 'PPP') : 'Not specified'}
+							</div>
+						</div>
+					)}
 					<form
 						onSubmit={handleEditSubmit}
 						className="grid grid-cols-1 md:grid-cols-2 gap-4"
@@ -676,16 +695,6 @@ export default function LeadsPage() {
 									</SelectGroup>
 								</SelectContent>
 							</Select>
-							<Label htmlFor="edit-dateReceived">Date Received</Label>
-							<Input
-								name="dateReceived"
-								id="edit-dateReceived"
-								type="date"
-								value={editForm?.dateReceived || ''}
-								onChange={handleEditChange}
-								required
-								aria-label="Date Received"
-							/>
 							<Label htmlFor="edit-contactName">Contact Name</Label>
 							<Input
 								name="contactName"
@@ -740,29 +749,52 @@ export default function LeadsPage() {
 								aria-label="Potential Value"
 							/>
 							<Label htmlFor="edit-followUpDate">Follow-Up Date</Label>
-							<Input
-								name="followUpDate"
-								id="edit-followUpDate"
-								type="date"
-								value={editForm?.followUpDate || ''}
-								onChange={handleEditChange}
-								aria-label="Follow-Up Date"
-							/>
+							<Popover>
+								<PopoverTrigger asChild>
+									<Button
+										variant="outline"
+										className={cn(
+											'w-full justify-start text-left font-normal',
+											!followUpDate && 'text-muted-foreground'
+										)}
+									>
+										<CalendarIcon className="mr-2 h-4 w-4" />
+										{followUpDate ? format(followUpDate, 'PPP') : <span>Pick a date</span>}
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent
+									className="w-auto p-0"
+									align="start"
+								>
+									<Calendar
+										mode="single"
+										selected={followUpDate}
+										onSelect={setFollowUpDate}
+										initialFocus
+									/>
+								</PopoverContent>
+							</Popover>
+						</div>
+						<div className="col-span-1 md:col-span-2 flex flex-col gap-2">
 							<Label htmlFor="edit-notes">Notes/Comments</Label>
-							<textarea
+							<Textarea
 								name="notes"
 								id="edit-notes"
 								value={editForm?.notes || ''}
 								onChange={handleEditChange}
-								aria-label="Notes/Comments"
-								className="border rounded p-2 w-full min-h-[60px] bg-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+								placeholder="Enter any additional notes or comments about this lead..."
+								className="min-h-[100px] resize-none"
 							/>
 						</div>
 						<div className="col-span-1 md:col-span-2 flex justify-end gap-2 mt-2">
 							<Button
 								type="button"
 								variant="outline"
-								onClick={() => setEditDialogOpen(false)}
+								onClick={() => {
+									setEditDialogOpen(false)
+									setOriginalLead(null)
+									setFollowUpDate(undefined)
+								}}
 							>
 								Cancel
 							</Button>
