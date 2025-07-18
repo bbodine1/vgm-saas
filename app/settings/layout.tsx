@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Users, Users as TeamIcon, Settings, Activity, Shield, Home, ArrowLeft, Menu, X } from 'lucide-react'
+import { Users, Users as TeamIcon, Settings, Activity, Shield, Home, ArrowLeft, Menu, X, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Header from '@/components/layout/Header'
 
@@ -13,6 +13,7 @@ const settingsNavItems = [
 	{ href: '/settings/general', icon: Settings, label: 'General' },
 	{ href: '/settings/activity', icon: Activity, label: 'Activity' },
 	{ href: '/settings/security', icon: Shield, label: 'Security' },
+	{ href: '/settings/leads', icon: Target, label: 'Leads' },
 ]
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {

@@ -76,43 +76,61 @@ export async function POST(request: NextRequest) {
 
 // Update a lead
 export async function PATCH(request: NextRequest) {
-	const user = await getUser()
-	if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-	const session = await getSession()
-	const teamId = session?.activeTeamId
-	if (!teamId) return NextResponse.json({ error: 'No active team' }, { status: 400 })
-	const body = await request.json()
-	const {
-		id,
-		leadSource: editLeadSource,
-		dateReceived: editDateReceived,
-		contactName: editContactName,
-		emailAddress: editEmailAddress,
-		phoneNumber: editPhoneNumber,
-		serviceInterest: editServiceInterest,
-		leadStatus: editLeadStatus,
-		potentialValue: editPotentialValue,
-		followUpDate: editFollowUpDate,
-		notes: editNotes,
-	} = body
-	if (!id) return NextResponse.json({ error: 'Missing lead id' }, { status: 400 })
-	const [updatedLead] = await db
-		.update(leads)
-		.set({
+	try {
+		const user = await getUser()
+		if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+		const session = await getSession()
+		const teamId = session?.activeTeamId
+		if (!teamId) return NextResponse.json({ error: 'No active team' }, { status: 400 })
+		const body = await request.json()
+		console.log('PATCH request body:', body)
+
+		const {
+			id,
 			leadSource: editLeadSource,
-			dateReceived: editDateReceived ? new Date(editDateReceived) : undefined,
+			dateReceived: editDateReceived,
 			contactName: editContactName,
 			emailAddress: editEmailAddress,
 			phoneNumber: editPhoneNumber,
 			serviceInterest: editServiceInterest,
 			leadStatus: editLeadStatus,
+			potentialValue: editPotentialValue,
+			followUpDate: editFollowUpDate,
+			notes: editNotes,
+		} = body
+
+		if (!id) return NextResponse.json({ error: 'Missing lead id' }, { status: 400 })
+
+		// Prepare update object, handling empty strings properly
+		const updateData: any = {
+			dateReceived: editDateReceived ? new Date(editDateReceived) : undefined,
+			contactName: editContactName,
+			leadStatus: editLeadStatus,
 			potentialValue: editPotentialValue ? Number(editPotentialValue) : null,
 			followUpDate: editFollowUpDate ? new Date(editFollowUpDate) : null,
-			notes: editNotes,
-		})
-		.where(and(eq(leads.id, id), eq(leads.teamId, teamId)))
-		.returning()
-	return NextResponse.json(updatedLead)
+		}
+
+		// Handle optional fields that can be empty strings
+		if (editLeadSource !== undefined) updateData.leadSource = editLeadSource || null
+		if (editEmailAddress !== undefined) updateData.emailAddress = editEmailAddress || null
+		if (editPhoneNumber !== undefined) updateData.phoneNumber = editPhoneNumber || null
+		if (editServiceInterest !== undefined) updateData.serviceInterest = editServiceInterest || null
+		if (editNotes !== undefined) updateData.notes = editNotes || null
+
+		console.log('Update data:', updateData)
+
+		const [updatedLead] = await db
+			.update(leads)
+			.set(updateData)
+			.where(and(eq(leads.id, id), eq(leads.teamId, teamId)))
+			.returning()
+
+		console.log('Updated lead:', updatedLead)
+		return NextResponse.json(updatedLead)
+	} catch (error) {
+		console.error('Error in PATCH /api/leads:', error)
+		return NextResponse.json({ error: 'Database error' }, { status: 500 })
+	}
 }
 
 // Delete a lead

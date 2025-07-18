@@ -1,6 +1,6 @@
 import { stripe } from '../payments/stripe'
 import { db } from './drizzle'
-import { users, teams, teamMembers, leads } from './schema'
+import { users, teams, teamMembers, leads, leadSources } from './schema'
 import { hashPassword } from '@/lib/auth/session'
 import { eq } from 'drizzle-orm'
 
@@ -140,6 +140,17 @@ async function seed() {
 				potentialValue: 1000 * i,
 				followUpDate: new Date(Date.now() + 86400000 * i),
 				notes: 'Seeded test lead',
+				teamId: team.id,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+		}
+
+		// Add default lead sources for this org
+		const defaultSources = ['Website Form', 'Social Media', 'Referral', 'Email Campaign', 'Cold Call', 'Trade Show']
+		for (const sourceName of defaultSources) {
+			await db.insert(leadSources).values({
+				name: sourceName,
 				teamId: team.id,
 				createdAt: new Date(),
 				updatedAt: new Date(),

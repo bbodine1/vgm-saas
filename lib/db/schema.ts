@@ -89,9 +89,26 @@ export const leads = pgTable('leads', {
 	updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
+export const leadSources = pgTable('lead_sources', {
+	id: serial('id').primaryKey(),
+	name: varchar('name', { length: 100 }).notNull(),
+	teamId: integer('team_id')
+		.notNull()
+		.references(() => teams.id),
+	createdAt: timestamp('created_at').notNull().defaultNow(),
+	updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
 export const leadsRelations = relations(leads, ({ one }) => ({
 	team: one(teams, {
 		fields: [leads.teamId],
+		references: [teams.id],
+	}),
+}))
+
+export const leadSourcesRelations = relations(leadSources, ({ one }) => ({
+	team: one(teams, {
+		fields: [leadSources.teamId],
 		references: [teams.id],
 	}),
 }))
@@ -100,6 +117,8 @@ export const teamsRelations = relations(teams, ({ many }) => ({
 	teamMembers: many(teamMembers),
 	activityLogs: many(activityLogs),
 	invitations: many(invitations),
+	leads: many(leads),
+	leadSources: many(leadSources),
 }))
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -165,6 +184,8 @@ export type TeamDataWithMembers = Team & {
 
 export type Lead = typeof leads.$inferSelect
 export type NewLead = typeof leads.$inferInsert
+export type LeadSource = typeof leadSources.$inferSelect
+export type NewLeadSource = typeof leadSources.$inferInsert
 
 export enum ActivityType {
 	SIGN_UP = 'SIGN_UP',
