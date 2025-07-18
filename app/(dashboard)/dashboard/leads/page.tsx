@@ -1,10 +1,9 @@
 'use client'
 
 import useSWR from 'swr'
-import { useState, useContext, useRef, useEffect } from 'react'
+import { useState, useContext } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { TeamContext } from '../layout'
 import {
 	Dialog,
@@ -12,7 +11,6 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
-	DialogFooter,
 	DialogClose,
 	DialogDescription,
 } from '@/components/ui/dialog'
@@ -37,6 +35,7 @@ import {
 	DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface Lead {
 	id: number
@@ -125,20 +124,16 @@ export default function LeadsPage() {
 			{
 				id: 'select',
 				header: () => (
-					<input
-						type="checkbox"
+					<Checkbox
 						checked={leads.length > 0 && leads.every(l => selectedLeadIds.includes(l.id))}
-						onClick={e => handleSelectAll((e.target as HTMLInputElement).checked)}
-						onChange={() => {}}
+						onCheckedChange={checked => handleSelectAll(!!checked)}
 						aria-label="Select all leads on page"
 					/>
 				),
 				cell: ({ row }) => (
-					<input
-						type="checkbox"
+					<Checkbox
 						checked={selectedLeadIds.includes(row.original.id)}
-						onClick={e => handleSelectOne(row.original.id, e)}
-						onChange={() => {}}
+						onCheckedChange={() => handleSelectOne(row.original.id, { preventDefault: () => {} } as any)}
 						aria-label={`Select lead ${row.original.id}`}
 					/>
 				),
@@ -257,8 +252,12 @@ export default function LeadsPage() {
 		}
 	}
 
-	const handleSelectOne = (id: number | string, event: React.MouseEvent<HTMLInputElement>) => {
+	const handleSelectOne = (
+		id: number | string,
+		event?: React.MouseEvent<HTMLInputElement> | { preventDefault: () => void }
+	) => {
 		const numericId = typeof id === 'string' ? parseInt(id, 10) : id
+		if (event && event.preventDefault) event.preventDefault()
 		if (selectedLeadIds.includes(numericId)) {
 			setSelectedLeadIds(selectedLeadIds.filter(i => i !== numericId))
 		} else {
@@ -568,7 +567,7 @@ export default function LeadsPage() {
 											onClick={e => {
 												// Don't trigger row click if clicking on checkbox or dropdown
 												if (
-													(e.target as HTMLElement).closest('input[type="checkbox"]') ||
+													(e.target as HTMLElement).closest('[role="checkbox"]') ||
 													(e.target as HTMLElement).closest('[role="button"]') ||
 													(e.target as HTMLElement).closest('[data-radix-popper-content-wrapper]')
 												) {
