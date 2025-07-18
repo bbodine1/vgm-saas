@@ -394,20 +394,15 @@ export default function LeadsPage() {
 	return (
 		<main className="flex flex-col gap-8 p-4">
 			<h1 className="text-2xl font-bold">Leads</h1>
-			<div className="mb-2 flex justify-end">
-				<Button
-					variant="destructive"
-					size="sm"
-					onClick={handleBulkDelete}
-					disabled={selectedLeadIds.length === 0 || loading}
-				>
-					Delete Selected
-				</Button>
-			</div>
-			<div className="mb-4">
+			<div className="mb-4 flex justify-start gap-2">
 				<Dialog>
 					<DialogTrigger asChild>
-						<Button variant="default">Add Lead</Button>
+						<Button
+							variant="default"
+							size="default"
+						>
+							Add Lead
+						</Button>
 					</DialogTrigger>
 					<DialogContent className="sm:max-w-[425px]">
 						<DialogHeader>
@@ -538,6 +533,16 @@ export default function LeadsPage() {
 						</form>
 					</DialogContent>
 				</Dialog>
+				{selectedLeadIds.length > 0 && (
+					<Button
+						variant="destructive"
+						size="default"
+						onClick={handleBulkDelete}
+						disabled={loading}
+					>
+						Delete Selected
+					</Button>
+				)}
 			</div>
 			{leads.length > 0 && currentPageLeads.length > 0 ? (
 				<>
