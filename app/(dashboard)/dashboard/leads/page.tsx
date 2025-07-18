@@ -67,6 +67,7 @@ interface EditFormData {
 interface LeadSource {
 	id: number
 	name: string
+	order?: number
 }
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
@@ -422,14 +423,16 @@ export default function LeadsPage() {
 									className="border rounded p-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary"
 								>
 									<option value="">Select a lead source</option>
-									{leadSources.map(source => (
-										<option
-											key={source.id}
-											value={source.name}
-										>
-											{source.name}
-										</option>
-									))}
+									{[...leadSources]
+										.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+										.map(source => (
+											<option
+												key={source.id}
+												value={source.name}
+											>
+												{source.name}
+											</option>
+										))}
 								</select>
 								<Label htmlFor="dateReceived">Date Received</Label>
 								<Input
@@ -644,14 +647,16 @@ export default function LeadsPage() {
 								className="border rounded p-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary"
 							>
 								<option value="">Select a lead source</option>
-								{leadSources.map(source => (
-									<option
-										key={source.id}
-										value={source.name}
-									>
-										{source.name}
-									</option>
-								))}
+								{[...leadSources]
+									.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+									.map(source => (
+										<option
+											key={source.id}
+											value={source.name}
+										>
+											{source.name}
+										</option>
+									))}
 							</select>
 							<Label htmlFor="edit-dateReceived">Date Received</Label>
 							<Input

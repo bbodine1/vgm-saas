@@ -1,0 +1,1 @@
+ALTER TABLE lead_sources ADD COLUMN "order" integer NOT NULL DEFAULT 0; 

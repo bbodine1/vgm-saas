@@ -95,6 +95,7 @@ export const leadSources = pgTable('lead_sources', {
 	teamId: integer('team_id')
 		.notNull()
 		.references(() => teams.id),
+	order: integer('order').notNull().default(0),
 	createdAt: timestamp('created_at').notNull().defaultNow(),
 	updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })

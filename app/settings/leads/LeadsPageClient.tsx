@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import useSWR from 'swr'
 import {
 	Dialog,
@@ -15,7 +16,16 @@ import {
 	DialogClose,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { MoreHorizontal, Plus, Edit, Trash2, Loader2 } from 'lucide-react'
+import { MoreHorizontal, Plus, Edit, Trash2, Loader2, GripVertical } from 'lucide-react'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import {
+	arrayMove,
+	SortableContext,
+	sortableKeyboardCoordinates,
+	verticalListSortingStrategy,
+	useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -33,6 +43,24 @@ type LeadsPageClientProps = {
 	leadSources: LeadSource[]
 }
 
+function DraggableRow({ id, children }: { id: number; children: (props: { listeners: any }) => React.ReactNode }) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+	return (
+		<tr
+			ref={setNodeRef}
+			style={{
+				transform: CSS.Transform.toString(transform),
+				transition,
+				background: isDragging ? '#f3f4f6' : undefined,
+			}}
+			{...attributes}
+			className={isDragging ? 'opacity-70' : ''}
+		>
+			{children({ listeners })}
+		</tr>
+	)
+}
+
 export default function LeadsPageClient({ team, leadSources: initialLeadSources }: LeadsPageClientProps) {
 	const { data: leadSources = initialLeadSources, mutate } = useSWR<LeadSource[]>(
 		`/api/lead-sources?teamId=${team.id}`,
@@ -44,6 +72,9 @@ export default function LeadsPageClient({ team, leadSources: initialLeadSources 
 	const [loading, setLoading] = useState(false)
 	const [dialogOpen, setDialogOpen] = useState(false)
 	const [editDialogOpen, setEditDialogOpen] = useState(false)
+
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+	const [draggedSources, setDraggedSources] = useState<LeadSource[] | null>(null)
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setForm({ ...form, [e.target.name]: e.target.value })
@@ -103,125 +134,203 @@ export default function LeadsPageClient({ team, leadSources: initialLeadSources 
 		setLoading(false)
 	}
 
+	const handleDragEnd = async (event: any) => {
+		const { active, over } = event
+		if (!active || !over || active.id === over.id) return
+		const oldIndex = leadSources.findIndex(ls => ls.id === active.id)
+		const newIndex = leadSources.findIndex(ls => ls.id === over.id)
+		if (oldIndex === -1 || newIndex === -1) return
+		const newOrder = arrayMove(leadSources, oldIndex, newIndex)
+		setDraggedSources(newOrder)
+		// Prepare order update payload
+		const orderPayload = newOrder.map((ls, idx) => ({ id: ls.id, order: idx + 1 }))
+		setLoading(true)
+		await fetch('/api/lead-sources', {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(orderPayload),
+		})
+		await mutate()
+		setDraggedSources(null)
+		setLoading(false)
+	}
+
 	return (
 		<section className="flex-1 p-4 lg:p-8">
 			<div className="flex items-center justify-between mb-6">
-				<h1 className="text-lg lg:text-2xl font-medium text-gray-900">Lead Sources</h1>
-				<Dialog
-					open={dialogOpen}
-					onOpenChange={setDialogOpen}
-				>
-					<DialogTrigger asChild>
-						<Button className="bg-orange-500 hover:bg-orange-600 text-white">
-							<Plus className="h-4 w-4 mr-2" />
-							Add Lead Source
-						</Button>
-					</DialogTrigger>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>Add New Lead Source</DialogTitle>
-						</DialogHeader>
-						<form
-							onSubmit={handleSubmit}
-							className="space-y-4"
-						>
-							<div>
-								<Label htmlFor="name">Name</Label>
-								<Input
-									name="name"
-									id="name"
-									value={form.name}
-									onChange={handleChange}
-									required
-									placeholder="e.g., Website Form"
-								/>
-							</div>
-							<DialogFooter>
-								<DialogClose asChild>
-									<Button
-										type="button"
-										variant="outline"
-									>
-										Cancel
-									</Button>
-								</DialogClose>
-								<Button
-									type="submit"
-									disabled={loading}
-									className="bg-orange-500 hover:bg-orange-600 text-white"
-								>
-									{loading ? (
-										<>
-											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-											Adding...
-										</>
-									) : (
-										'Add Lead Source'
-									)}
-								</Button>
-							</DialogFooter>
-						</form>
-					</DialogContent>
-				</Dialog>
+				<h1 className="text-lg lg:text-2xl font-medium text-gray-900">Lead Management</h1>
 			</div>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Manage Lead Sources</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-4">
-						{leadSources.map(leadSource => (
-							<div
-								key={leadSource.id}
-								className="flex items-center justify-between p-4 border rounded-lg"
-							>
-								<div>
-									<h3 className="font-medium">{leadSource.name}</h3>
-									<p className="text-sm text-muted-foreground">
-										Created {new Date(leadSource.createdAt).toLocaleDateString()}
-									</p>
-								</div>
-								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				{/* Lead Sources Card */}
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+						<CardTitle className="text-lg font-medium">Lead Sources</CardTitle>
+						<Dialog
+							open={dialogOpen}
+							onOpenChange={setDialogOpen}
+						>
+							<DialogTrigger asChild>
+								<Button
+									size="sm"
+									className="bg-orange-500 hover:bg-orange-600 text-white"
+								>
+									<Plus className="h-4 w-4 mr-2" />
+									Add Source
+								</Button>
+							</DialogTrigger>
+							<DialogContent>
+								<DialogHeader>
+									<DialogTitle>Add New Lead Source</DialogTitle>
+								</DialogHeader>
+								<form
+									onSubmit={handleSubmit}
+									className="space-y-4"
+								>
+									<div>
+										<Label htmlFor="name">Name</Label>
+										<Input
+											name="name"
+											id="name"
+											value={form.name}
+											onChange={handleChange}
+											required
+											placeholder="e.g., Website Form"
+										/>
+									</div>
+									<DialogFooter>
+										<DialogClose asChild>
+											<Button
+												type="button"
+												variant="outline"
+											>
+												Cancel
+											</Button>
+										</DialogClose>
 										<Button
-											variant="ghost"
-											className="h-8 w-8 p-0"
+											type="submit"
+											disabled={loading}
+											className="bg-orange-500 hover:bg-orange-600 text-white"
 										>
-											<span className="sr-only">Open menu</span>
-											<MoreHorizontal className="h-4 w-4" />
+											{loading ? (
+												<>
+													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+													Adding...
+												</>
+											) : (
+												'Add Lead Source'
+											)}
 										</Button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end">
-										<DropdownMenuLabel>Actions</DropdownMenuLabel>
-										<DropdownMenuItem
-											onClick={() => handleEdit(leadSource)}
-											disabled={loading}
-										>
-											<Edit className="h-4 w-4 mr-2" />
-											Edit
-										</DropdownMenuItem>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											onClick={() => handleDelete(leadSource.id)}
-											disabled={loading}
-										>
-											<Trash2 className="h-4 w-4 mr-2" />
-											Delete
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
+									</DialogFooter>
+								</form>
+							</DialogContent>
+						</Dialog>
+					</CardHeader>
+					<CardContent>
+						{leadSources.length > 0 ? (
+							<DndContext
+								sensors={sensors}
+								collisionDetection={closestCenter}
+								onDragEnd={handleDragEnd}
+							>
+								<SortableContext
+									items={leadSources.map(ls => ls.id)}
+									strategy={verticalListSortingStrategy}
+								>
+									<Table>
+										<TableHeader>
+											<TableRow>
+												<TableHead></TableHead>
+												<TableHead>Name</TableHead>
+												<TableHead className="w-[100px]">Actions</TableHead>
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{(draggedSources || leadSources).map(leadSource => (
+												<DraggableRow
+													key={leadSource.id}
+													id={leadSource.id}
+												>
+													{({ listeners }: { listeners: any }) => (
+														<>
+															<TableCell
+																className="cursor-grab"
+																{...listeners}
+															>
+																<GripVertical className="h-4 w-4" />
+															</TableCell>
+															<TableCell className="font-medium">{leadSource.name}</TableCell>
+															<TableCell>
+																<DropdownMenu>
+																	<DropdownMenuTrigger asChild>
+																		<Button
+																			variant="ghost"
+																			className="h-8 w-8 p-0"
+																		>
+																			<span className="sr-only">Open menu</span>
+																			<MoreHorizontal className="h-4 w-4" />
+																		</Button>
+																	</DropdownMenuTrigger>
+																	<DropdownMenuContent align="end">
+																		<DropdownMenuLabel>Actions</DropdownMenuLabel>
+																		<DropdownMenuItem
+																			onClick={() => handleEdit(leadSource)}
+																			disabled={loading}
+																		>
+																			<Edit className="h-4 w-4 mr-2" />
+																			Edit
+																		</DropdownMenuItem>
+																		<DropdownMenuSeparator />
+																		<DropdownMenuItem
+																			onClick={() => handleDelete(leadSource.id)}
+																			disabled={loading}
+																		>
+																			<Trash2 className="h-4 w-4 mr-2" />
+																			Delete
+																		</DropdownMenuItem>
+																	</DropdownMenuContent>
+																</DropdownMenu>
+															</TableCell>
+														</>
+													)}
+												</DraggableRow>
+											))}
+										</TableBody>
+									</Table>
+								</SortableContext>
+							</DndContext>
+						) : (
+							<div className="text-center py-8">
+								<p className="text-muted-foreground">No lead sources found. Add your first one to get started.</p>
 							</div>
-						))}
-					</div>
+						)}
+					</CardContent>
+				</Card>
 
-					{leadSources.length === 0 && (
+				{/* Empty Card 1 */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-lg font-medium">Coming Soon</CardTitle>
+					</CardHeader>
+					<CardContent>
 						<div className="text-center py-8">
-							<p className="text-muted-foreground">No lead sources found. Add your first one to get started.</p>
+							<p className="text-muted-foreground">Additional lead management features coming soon.</p>
 						</div>
-					)}
-				</CardContent>
-			</Card>
+					</CardContent>
+				</Card>
+
+				{/* Empty Card 2 */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-lg font-medium">Coming Soon</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="text-center py-8">
+							<p className="text-muted-foreground">Additional lead management features coming soon.</p>
+						</div>
+					</CardContent>
+				</Card>
+			</div>
 
 			<Dialog
 				open={editDialogOpen}

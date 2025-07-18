@@ -3,7 +3,7 @@ import { db } from '@/lib/db/drizzle'
 import { leadSources } from '@/lib/db/schema'
 import { getUser } from '@/lib/db/queries'
 import { getSession } from '@/lib/auth/session'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, asc, max } from 'drizzle-orm'
 
 // List all lead sources for the current team
 export async function GET(request: NextRequest) {
@@ -22,7 +22,11 @@ export async function GET(request: NextRequest) {
 
 		if (!teamId) return NextResponse.json({ error: 'No active team' }, { status: 400 })
 
-		const allLeadSources = await db.select().from(leadSources).where(eq(leadSources.teamId, teamId))
+		const allLeadSources = await db
+			.select()
+			.from(leadSources)
+			.where(eq(leadSources.teamId, teamId))
+			.orderBy(asc(leadSources.order))
 		return NextResponse.json(allLeadSources)
 	} catch (error) {
 		console.error('Error in /api/lead-sources GET:', error)
@@ -42,11 +46,18 @@ export async function POST(request: NextRequest) {
 	if (!name) {
 		return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
 	}
+	// Get the current max order for this team
+	const [{ max: maxOrder }] = await db
+		.select({ max: max(leadSources.order) })
+		.from(leadSources)
+		.where(eq(leadSources.teamId, teamId))
+	const nextOrder = (maxOrder ?? 0) + 1
 	const [newLeadSource] = await db
 		.insert(leadSources)
 		.values({
 			name,
 			teamId,
+			order: nextOrder,
 		})
 		.returning()
 	return NextResponse.json(newLeadSource)
@@ -60,6 +71,20 @@ export async function PATCH(request: NextRequest) {
 	const teamId = session?.activeTeamId
 	if (!teamId) return NextResponse.json({ error: 'No active team' }, { status: 400 })
 	const body = await request.json()
+
+	if (Array.isArray(body)) {
+		// Bulk update order
+		await Promise.all(
+			body.map((item: { id: number; order: number }) =>
+				db
+					.update(leadSources)
+					.set({ order: item.order })
+					.where(and(eq(leadSources.id, item.id), eq(leadSources.teamId, teamId)))
+			)
+		)
+		return NextResponse.json({ success: true })
+	}
+
 	const { id, name } = body
 	if (!id) return NextResponse.json({ error: 'Missing lead source id' }, { status: 400 })
 	const [updatedLeadSource] = await db
