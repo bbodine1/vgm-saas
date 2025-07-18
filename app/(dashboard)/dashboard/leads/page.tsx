@@ -28,6 +28,7 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
+import { Label } from '@/components/ui/label'
 
 interface Lead {
 	id: number
@@ -269,75 +270,100 @@ export default function LeadsPage() {
 						</DialogHeader>
 						<form
 							onSubmit={handleSubmit}
-							className="flex flex-col gap-4"
+							className="grid grid-cols-1 md:grid-cols-2 gap-4"
 						>
-							<Input
-								name="leadSource"
-								placeholder="Lead Source"
-								value={form.leadSource}
-								onChange={handleChange}
-							/>
-							<Input
-								name="dateReceived"
-								type="date"
-								placeholder="Date Received"
-								value={form.dateReceived}
-								onChange={handleChange}
-								required
-							/>
-							<Input
-								name="contactName"
-								placeholder="Contact Name"
-								value={form.contactName}
-								onChange={handleChange}
-								required
-							/>
-							<Input
-								name="emailAddress"
-								placeholder="Email Address"
-								value={form.emailAddress}
-								onChange={handleChange}
-							/>
-							<Input
-								name="phoneNumber"
-								placeholder="Phone Number"
-								value={form.phoneNumber}
-								onChange={handleChange}
-							/>
-							<Input
-								name="serviceInterest"
-								placeholder="Service Interest"
-								value={form.serviceInterest}
-								onChange={handleChange}
-							/>
-							<Input
-								name="leadStatus"
-								placeholder="Lead Status"
-								value={form.leadStatus}
-								onChange={handleChange}
-							/>
-							<Input
-								name="potentialValue"
-								type="number"
-								placeholder="Potential Value"
-								value={form.potentialValue}
-								onChange={handleChange}
-							/>
-							<Input
-								name="followUpDate"
-								type="date"
-								placeholder="Follow-Up Date"
-								value={form.followUpDate}
-								onChange={handleChange}
-							/>
-							<textarea
-								name="notes"
-								placeholder="Notes/Comments"
-								value={form.notes}
-								onChange={handleChange}
-								className="border rounded p-2"
-							/>
-							<DialogFooter>
+							<div className="flex flex-col gap-2">
+								<Label htmlFor="leadSource">Lead Source</Label>
+								<Input
+									name="leadSource"
+									id="leadSource"
+									value={form.leadSource}
+									onChange={handleChange}
+									aria-label="Lead Source"
+								/>
+								<Label htmlFor="dateReceived">Date Received</Label>
+								<Input
+									name="dateReceived"
+									id="dateReceived"
+									type="date"
+									value={form.dateReceived}
+									onChange={handleChange}
+									required
+									aria-label="Date Received"
+								/>
+								<Label htmlFor="contactName">Contact Name</Label>
+								<Input
+									name="contactName"
+									id="contactName"
+									value={form.contactName}
+									onChange={handleChange}
+									required
+									aria-label="Contact Name"
+								/>
+								<Label htmlFor="emailAddress">Email Address</Label>
+								<Input
+									name="emailAddress"
+									id="emailAddress"
+									type="email"
+									value={form.emailAddress}
+									onChange={handleChange}
+									aria-label="Email Address"
+								/>
+								<Label htmlFor="phoneNumber">Phone Number</Label>
+								<Input
+									name="phoneNumber"
+									id="phoneNumber"
+									value={form.phoneNumber}
+									onChange={handleChange}
+									aria-label="Phone Number"
+								/>
+							</div>
+							<div className="flex flex-col gap-2">
+								<Label htmlFor="serviceInterest">Service Interest</Label>
+								<Input
+									name="serviceInterest"
+									id="serviceInterest"
+									value={form.serviceInterest}
+									onChange={handleChange}
+									aria-label="Service Interest"
+								/>
+								<Label htmlFor="leadStatus">Lead Status</Label>
+								<Input
+									name="leadStatus"
+									id="leadStatus"
+									value={form.leadStatus}
+									onChange={handleChange}
+									aria-label="Lead Status"
+								/>
+								<Label htmlFor="potentialValue">Potential Value</Label>
+								<Input
+									name="potentialValue"
+									id="potentialValue"
+									type="number"
+									value={form.potentialValue}
+									onChange={handleChange}
+									aria-label="Potential Value"
+								/>
+								<Label htmlFor="followUpDate">Follow-Up Date</Label>
+								<Input
+									name="followUpDate"
+									id="followUpDate"
+									type="date"
+									value={form.followUpDate}
+									onChange={handleChange}
+									aria-label="Follow-Up Date"
+								/>
+								<Label htmlFor="notes">Notes/Comments</Label>
+								<textarea
+									name="notes"
+									id="notes"
+									value={form.notes}
+									onChange={handleChange}
+									aria-label="Notes/Comments"
+									className="border rounded p-2 w-full min-h-[60px] bg-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+								/>
+							</div>
+							<div className="col-span-1 md:col-span-2 flex justify-end gap-2 mt-2">
 								<DialogClose asChild>
 									<Button
 										type="button"
@@ -352,7 +378,7 @@ export default function LeadsPage() {
 								>
 									{loading ? 'Adding...' : 'Add Lead'}
 								</Button>
-							</DialogFooter>
+							</div>
 						</form>
 					</DialogContent>
 				</Dialog>
