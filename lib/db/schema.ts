@@ -71,13 +71,17 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
 })
 
 export const leads = pgTable('leads', {
-	id: serial('id').primaryKey(),
-	businessName: varchar('business_name', { length: 255 }).notNull(),
-	firstContactDate: timestamp('first_contact_date').notNull(),
-	decisionMakerName: varchar('decision_maker_name', { length: 255 }).notNull(),
-	decisionMakerPhone: varchar('decision_maker_phone', { length: 50 }),
-	medium: varchar('medium', { length: 100 }),
-	completed: integer('completed').notNull().default(0), // 0 = false, 1 = true
+	id: serial('id').primaryKey(), // Lead ID
+	leadSource: varchar('lead_source', { length: 100 }), // Lead Source
+	dateReceived: timestamp('date_received').notNull(), // Date Received
+	contactName: varchar('contact_name', { length: 255 }).notNull(), // Contact Name
+	emailAddress: varchar('email_address', { length: 255 }), // Email Address
+	phoneNumber: varchar('phone_number', { length: 50 }), // Phone Number
+	serviceInterest: varchar('service_interest', { length: 100 }), // Service Interest
+	leadStatus: varchar('lead_status', { length: 50 }).notNull().default('New'), // Lead Status
+	potentialValue: integer('potential_value'), // Potential Value
+	followUpDate: timestamp('follow_up_date'), // Follow-Up Date
+	notes: text('notes'), // Notes/Comments
 	teamId: integer('team_id')
 		.notNull()
 		.references(() => teams.id),

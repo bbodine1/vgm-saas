@@ -40,20 +40,35 @@ export async function POST(request: NextRequest) {
 	const teamId = session?.activeTeamId
 	if (!teamId) return NextResponse.json({ error: 'No active team' }, { status: 400 })
 	const body = await request.json()
-	const { businessName, firstContactDate, decisionMakerName, decisionMakerPhone, medium } = body
-	if (!businessName || !firstContactDate || !decisionMakerName) {
+	const {
+		leadSource,
+		dateReceived,
+		contactName,
+		emailAddress,
+		phoneNumber,
+		serviceInterest,
+		leadStatus,
+		potentialValue,
+		followUpDate,
+		notes,
+	} = body
+	if (!contactName || !dateReceived) {
 		return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
 	}
 	const [newLead] = await db
 		.insert(leads)
 		.values({
-			businessName,
-			firstContactDate: new Date(firstContactDate),
-			decisionMakerName,
-			decisionMakerPhone,
-			medium,
+			leadSource,
+			dateReceived: new Date(dateReceived),
+			contactName,
+			emailAddress,
+			phoneNumber,
+			serviceInterest,
+			leadStatus: leadStatus || 'New',
+			potentialValue: potentialValue ? Number(potentialValue) : null,
+			followUpDate: followUpDate ? new Date(followUpDate) : null,
+			notes,
 			teamId,
-			completed: 0,
 		})
 		.returning()
 	return NextResponse.json(newLead)
@@ -67,17 +82,33 @@ export async function PATCH(request: NextRequest) {
 	const teamId = session?.activeTeamId
 	if (!teamId) return NextResponse.json({ error: 'No active team' }, { status: 400 })
 	const body = await request.json()
-	const { id, businessName, firstContactDate, decisionMakerName, decisionMakerPhone, medium, completed } = body
+	const {
+		id,
+		leadSource: editLeadSource,
+		dateReceived: editDateReceived,
+		contactName: editContactName,
+		emailAddress: editEmailAddress,
+		phoneNumber: editPhoneNumber,
+		serviceInterest: editServiceInterest,
+		leadStatus: editLeadStatus,
+		potentialValue: editPotentialValue,
+		followUpDate: editFollowUpDate,
+		notes: editNotes,
+	} = body
 	if (!id) return NextResponse.json({ error: 'Missing lead id' }, { status: 400 })
 	const [updatedLead] = await db
 		.update(leads)
 		.set({
-			businessName,
-			firstContactDate: new Date(firstContactDate),
-			decisionMakerName,
-			decisionMakerPhone,
-			medium,
-			completed,
+			leadSource: editLeadSource,
+			dateReceived: editDateReceived ? new Date(editDateReceived) : undefined,
+			contactName: editContactName,
+			emailAddress: editEmailAddress,
+			phoneNumber: editPhoneNumber,
+			serviceInterest: editServiceInterest,
+			leadStatus: editLeadStatus,
+			potentialValue: editPotentialValue ? Number(editPotentialValue) : null,
+			followUpDate: editFollowUpDate ? new Date(editFollowUpDate) : null,
+			notes: editNotes,
 		})
 		.where(and(eq(leads.id, id), eq(leads.teamId, teamId)))
 		.returning()

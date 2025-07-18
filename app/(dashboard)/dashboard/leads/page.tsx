@@ -31,12 +31,16 @@ import {
 
 interface Lead {
 	id: number
-	businessName: string
-	firstContactDate: string
-	decisionMakerName: string
-	decisionMakerPhone?: string
-	medium?: string
-	completed: number
+	leadSource?: string
+	dateReceived: string
+	contactName: string
+	emailAddress?: string
+	phoneNumber?: string
+	serviceInterest?: string
+	leadStatus: string
+	potentialValue?: number
+	followUpDate?: string
+	notes?: string
 }
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
@@ -45,21 +49,26 @@ export default function LeadsPage() {
 	const { teamId } = useContext(TeamContext)
 	const { data: leads = [], mutate } = useSWR<Lead[]>(teamId ? `/api/leads?teamId=${teamId}` : null, fetcher)
 	const [form, setForm] = useState({
-		businessName: '',
-		firstContactDate: '',
-		decisionMakerName: '',
-		decisionMakerPhone: '',
-		medium: '',
+		leadSource: '',
+		dateReceived: '',
+		contactName: '',
+		emailAddress: '',
+		phoneNumber: '',
+		serviceInterest: '',
+		leadStatus: 'New',
+		potentialValue: '',
+		followUpDate: '',
+		notes: '',
 	})
 	const [loading, setLoading] = useState(false)
 	const [editingId, setEditingId] = useState<number | null>(null)
 	const [editForm, setEditForm] = useState<typeof form | null>(null)
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		setForm({ ...form, [e.target.name]: e.target.value })
 	}
 
-	const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		if (editForm) setEditForm({ ...editForm, [e.target.name]: e.target.value })
 	}
 
@@ -73,7 +82,18 @@ export default function LeadsPage() {
 		})
 		if (res.ok) {
 			await mutate()
-			setForm({ businessName: '', firstContactDate: '', decisionMakerName: '', decisionMakerPhone: '', medium: '' })
+			setForm({
+				leadSource: '',
+				dateReceived: '',
+				contactName: '',
+				emailAddress: '',
+				phoneNumber: '',
+				serviceInterest: '',
+				leadStatus: 'New',
+				potentialValue: '',
+				followUpDate: '',
+				notes: '',
+			})
 		}
 		setLoading(false)
 	}
@@ -81,11 +101,16 @@ export default function LeadsPage() {
 	const handleEdit = (lead: Lead) => {
 		setEditingId(lead.id)
 		setEditForm({
-			businessName: lead.businessName,
-			firstContactDate: lead.firstContactDate.slice(0, 10),
-			decisionMakerName: lead.decisionMakerName,
-			decisionMakerPhone: lead.decisionMakerPhone || '',
-			medium: lead.medium || '',
+			leadSource: lead.leadSource || '',
+			dateReceived: lead.dateReceived ? lead.dateReceived.slice(0, 10) : '',
+			contactName: lead.contactName,
+			emailAddress: lead.emailAddress || '',
+			phoneNumber: lead.phoneNumber || '',
+			serviceInterest: lead.serviceInterest || '',
+			leadStatus: lead.leadStatus || 'New',
+			potentialValue: lead.potentialValue?.toString() || '',
+			followUpDate: lead.followUpDate ? lead.followUpDate.slice(0, 10) : '',
+			notes: lead.notes || '',
 		})
 	}
 
@@ -96,7 +121,11 @@ export default function LeadsPage() {
 		const res = await fetch('/api/leads', {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ id: editingId, ...editForm }),
+			body: JSON.stringify({
+				id: editingId,
+				...editForm,
+				potentialValue: editForm.potentialValue ? Number(editForm.potentialValue) : null,
+			}),
 		})
 		if (res.ok) {
 			await mutate()
@@ -132,43 +161,25 @@ export default function LeadsPage() {
 	// DataTable columns
 	const columns = useMemo<ColumnDef<Lead>[]>(
 		() => [
+			{ accessorKey: 'leadSource', header: 'Lead Source', cell: info => info.getValue() },
+			{ accessorKey: 'dateReceived', header: 'Date Received', cell: info => (info.getValue() as string)?.slice(0, 10) },
+			{ accessorKey: 'contactName', header: 'Contact Name', cell: info => info.getValue() },
+			{ accessorKey: 'emailAddress', header: 'Email', cell: info => info.getValue() },
+			{ accessorKey: 'phoneNumber', header: 'Phone', cell: info => info.getValue() },
+			{ accessorKey: 'serviceInterest', header: 'Service Interest', cell: info => info.getValue() },
+			{ accessorKey: 'leadStatus', header: 'Status', cell: info => info.getValue() },
+			{ accessorKey: 'potentialValue', header: 'Potential Value', cell: info => info.getValue() },
 			{
-				accessorKey: 'businessName',
-				header: 'Business Name',
-				cell: info => info.getValue(),
-			},
-			{
-				accessorKey: 'firstContactDate',
-				header: 'Date of First Contact',
+				accessorKey: 'followUpDate',
+				header: 'Follow-Up Date',
 				cell: info => (info.getValue() as string)?.slice(0, 10),
 			},
-			{
-				accessorKey: 'decisionMakerName',
-				header: 'Decision Maker',
-				cell: info => info.getValue(),
-			},
-			{
-				accessorKey: 'decisionMakerPhone',
-				header: 'Phone',
-				cell: info => info.getValue(),
-			},
-			{
-				accessorKey: 'medium',
-				header: 'Medium',
-				cell: info => info.getValue(),
-			},
-			{
-				accessorKey: 'completed',
-				header: 'Status',
-				cell: info => (info.row.original.completed ? 'Completed' : 'Open'),
-			},
+			{ accessorKey: 'notes', header: 'Notes', cell: info => info.getValue() },
 			{
 				id: 'actions',
 				header: 'Actions',
 				cell: ({ row }) => {
 					const lead = row.original
-
-					// Show save/cancel buttons when editing this row
 					if (editingId === lead.id) {
 						return (
 							<div className="flex gap-2">
@@ -193,8 +204,6 @@ export default function LeadsPage() {
 							</div>
 						)
 					}
-
-					// Show normal dropdown menu when not editing
 					return (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
@@ -218,7 +227,7 @@ export default function LeadsPage() {
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
 									onClick={() => handleEdit(lead)}
-									disabled={loading || !!lead.completed}
+									disabled={loading}
 								>
 									Edit
 								</DropdownMenuItem>
@@ -228,14 +237,6 @@ export default function LeadsPage() {
 								>
 									Delete
 								</DropdownMenuItem>
-								{!lead.completed && (
-									<DropdownMenuItem
-										onClick={() => handleMarkCompleted(lead)}
-										disabled={loading}
-									>
-										Mark Completed
-									</DropdownMenuItem>
-								)}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					)
@@ -271,38 +272,70 @@ export default function LeadsPage() {
 							className="flex flex-col gap-4"
 						>
 							<Input
-								name="businessName"
-								placeholder="Business Name"
-								value={form.businessName}
+								name="leadSource"
+								placeholder="Lead Source"
+								value={form.leadSource}
 								onChange={handleChange}
-								required
 							/>
 							<Input
-								name="firstContactDate"
+								name="dateReceived"
 								type="date"
-								placeholder="Date of First Contact"
-								value={form.firstContactDate}
+								placeholder="Date Received"
+								value={form.dateReceived}
 								onChange={handleChange}
 								required
 							/>
 							<Input
-								name="decisionMakerName"
-								placeholder="Decision Maker Name"
-								value={form.decisionMakerName}
+								name="contactName"
+								placeholder="Contact Name"
+								value={form.contactName}
 								onChange={handleChange}
 								required
 							/>
 							<Input
-								name="decisionMakerPhone"
-								placeholder="Decision Maker Phone"
-								value={form.decisionMakerPhone}
+								name="emailAddress"
+								placeholder="Email Address"
+								value={form.emailAddress}
 								onChange={handleChange}
 							/>
 							<Input
-								name="medium"
-								placeholder="Medium"
-								value={form.medium}
+								name="phoneNumber"
+								placeholder="Phone Number"
+								value={form.phoneNumber}
 								onChange={handleChange}
+							/>
+							<Input
+								name="serviceInterest"
+								placeholder="Service Interest"
+								value={form.serviceInterest}
+								onChange={handleChange}
+							/>
+							<Input
+								name="leadStatus"
+								placeholder="Lead Status"
+								value={form.leadStatus}
+								onChange={handleChange}
+							/>
+							<Input
+								name="potentialValue"
+								type="number"
+								placeholder="Potential Value"
+								value={form.potentialValue}
+								onChange={handleChange}
+							/>
+							<Input
+								name="followUpDate"
+								type="date"
+								placeholder="Follow-Up Date"
+								value={form.followUpDate}
+								onChange={handleChange}
+							/>
+							<textarea
+								name="notes"
+								placeholder="Notes/Comments"
+								value={form.notes}
+								onChange={handleChange}
+								className="border rounded p-2"
 							/>
 							<DialogFooter>
 								<DialogClose asChild>
@@ -340,20 +373,22 @@ export default function LeadsPage() {
 					<TableBody>
 						{table.getRowModel().rows.length ? (
 							table.getRowModel().rows.map(row => (
-								<TableRow
-									key={row.id}
-									className={row.original.completed ? 'opacity-50' : ''}
-								>
+								<TableRow key={row.id}>
 									{row.getVisibleCells().map(cell => (
 										<TableCell key={cell.id}>
 											{editingId === row.original.id && cell.column.id !== 'actions'
 												? (() => {
 														const col = cell.column.id
 														if (
-															col === 'businessName' ||
-															col === 'decisionMakerName' ||
-															col === 'decisionMakerPhone' ||
-															col === 'medium'
+															col === 'leadSource' ||
+															col === 'contactName' ||
+															col === 'emailAddress' ||
+															col === 'phoneNumber' ||
+															col === 'serviceInterest' ||
+															col === 'leadStatus' ||
+															col === 'potentialValue' ||
+															col === 'followUpDate' ||
+															col === 'notes'
 														) {
 															return (
 																<Input
@@ -363,12 +398,12 @@ export default function LeadsPage() {
 																/>
 															)
 														}
-														if (col === 'firstContactDate') {
+														if (col === 'dateReceived') {
 															return (
 																<Input
-																	name="firstContactDate"
+																	name="dateReceived"
 																	type="date"
-																	value={editForm?.firstContactDate || ''}
+																	value={editForm?.dateReceived || ''}
 																	onChange={handleEditChange}
 																/>
 															)

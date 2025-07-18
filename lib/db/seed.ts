@@ -130,12 +130,16 @@ async function seed() {
 		// Add 6 test leads for this org
 		for (let i = 1; i <= 6; i++) {
 			await db.insert(leads).values({
-				businessName: `TEST Lead ${i} for ${org.name}`,
-				firstContactDate: new Date(),
-				decisionMakerName: `Test Contact ${i}`,
-				decisionMakerPhone: `555-000${i}`,
-				medium: 'TEST',
-				completed: 0,
+				leadSource: 'Website Form',
+				dateReceived: new Date(),
+				contactName: `Test Contact ${i}`,
+				emailAddress: `test${i}@example.com`,
+				phoneNumber: `555-000${i}`,
+				serviceInterest: 'Consulting',
+				leadStatus: 'New',
+				potentialValue: 1000 * i,
+				followUpDate: new Date(Date.now() + 86400000 * i),
+				notes: 'Seeded test lead',
 				teamId: team.id,
 				createdAt: new Date(),
 				updatedAt: new Date(),
