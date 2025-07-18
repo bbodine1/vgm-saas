@@ -2,14 +2,13 @@
 
 import Link from 'next/link'
 import useSWR, { mutate } from 'swr'
-import { useState, useTransition, createContext } from 'react'
+import { useState, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Users, Settings, Shield, Activity, Home, Briefcase } from 'lucide-react'
+import { TeamContext } from '@/lib/context/TeamContext'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
-
-export const TeamContext = createContext<{ teamId: number | null }>({ teamId: null })
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname()

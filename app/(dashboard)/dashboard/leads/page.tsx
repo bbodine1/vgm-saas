@@ -4,7 +4,7 @@ import useSWR from 'swr'
 import { useState, useContext } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { TeamContext } from '../layout'
+import { TeamContext } from '@/lib/context/TeamContext'
 import {
 	Dialog,
 	DialogTrigger,
@@ -14,6 +14,15 @@ import {
 	DialogClose,
 	DialogDescription,
 } from '@/components/ui/dialog'
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectLabel,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select'
 import { useMemo } from 'react'
 import {
 	ColumnDef,
@@ -295,10 +304,11 @@ export default function LeadsPage() {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		setLoading(true)
+		const requestBody = form
 		const res = await fetch('/api/leads', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(form),
+			body: JSON.stringify(requestBody),
 		})
 		if (res.ok) {
 			await mutate()
@@ -415,25 +425,29 @@ export default function LeadsPage() {
 						>
 							<div className="flex flex-col gap-2">
 								<Label htmlFor="leadSource">Lead Source</Label>
-								<select
-									name="leadSource"
-									id="leadSource"
+								<Select
+									onValueChange={(value: string) => setForm({ ...form, leadSource: value })}
 									value={form.leadSource}
-									onChange={handleChange}
-									className="border rounded p-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary"
 								>
-									<option value="">Select a lead source</option>
-									{[...leadSources]
-										.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-										.map(source => (
-											<option
-												key={source.id}
-												value={source.name}
-											>
-												{source.name}
-											</option>
-										))}
-								</select>
+									<SelectTrigger className="border rounded p-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary">
+										<SelectValue placeholder="Select a lead source" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectGroup>
+											<SelectLabel>Lead Sources</SelectLabel>
+											{[...leadSources]
+												.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+												.map(source => (
+													<SelectItem
+														key={source.id}
+														value={source.name}
+													>
+														{source.name}
+													</SelectItem>
+												))}
+										</SelectGroup>
+									</SelectContent>
+								</Select>
 								<Label htmlFor="dateReceived">Date Received</Label>
 								<Input
 									name="dateReceived"
@@ -639,25 +653,29 @@ export default function LeadsPage() {
 					>
 						<div className="flex flex-col gap-2">
 							<Label htmlFor="edit-leadSource">Lead Source</Label>
-							<select
-								name="leadSource"
-								id="edit-leadSource"
+							<Select
+								onValueChange={(value: string) => editForm && setEditForm({ ...editForm, leadSource: value })}
 								value={editForm?.leadSource || ''}
-								onChange={handleEditChange}
-								className="border rounded p-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary"
 							>
-								<option value="">Select a lead source</option>
-								{[...leadSources]
-									.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-									.map(source => (
-										<option
-											key={source.id}
-											value={source.name}
-										>
-											{source.name}
-										</option>
-									))}
-							</select>
+								<SelectTrigger className="border rounded p-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary">
+									<SelectValue placeholder="Select a lead source" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										<SelectLabel>Lead Sources</SelectLabel>
+										{[...leadSources]
+											.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+											.map(source => (
+												<SelectItem
+													key={source.id}
+													value={source.name}
+												>
+													{source.name}
+												</SelectItem>
+											))}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
 							<Label htmlFor="edit-dateReceived">Date Received</Label>
 							<Input
 								name="dateReceived"
@@ -761,3 +779,5 @@ export default function LeadsPage() {
 		</main>
 	)
 }
+
+export const dynamic = 'force-dynamic'
