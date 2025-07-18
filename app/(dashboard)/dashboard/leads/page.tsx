@@ -64,6 +64,8 @@ export default function LeadsPage() {
 	const [loading, setLoading] = useState(false)
 	const [editingId, setEditingId] = useState<number | null>(null)
 	const [editForm, setEditForm] = useState<typeof form | null>(null)
+	// Add new state for edit dialog
+	const [editDialogOpen, setEditDialogOpen] = useState(false)
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		setForm({ ...form, [e.target.name]: e.target.value })
@@ -113,6 +115,7 @@ export default function LeadsPage() {
 			followUpDate: lead.followUpDate ? lead.followUpDate.slice(0, 10) : '',
 			notes: lead.notes || '',
 		})
+		setEditDialogOpen(true)
 	}
 
 	const handleEditSubmit = async (e: React.FormEvent) => {
@@ -132,6 +135,7 @@ export default function LeadsPage() {
 			await mutate()
 			setEditingId(null)
 			setEditForm(null)
+			setEditDialogOpen(false)
 		}
 		setLoading(false)
 	}
@@ -181,30 +185,6 @@ export default function LeadsPage() {
 				header: 'Actions',
 				cell: ({ row }) => {
 					const lead = row.original
-					if (editingId === lead.id) {
-						return (
-							<div className="flex gap-2">
-								<Button
-									size="sm"
-									onClick={handleEditSubmit}
-									disabled={loading}
-								>
-									{loading ? 'Saving...' : 'Save'}
-								</Button>
-								<Button
-									size="sm"
-									variant="outline"
-									onClick={() => {
-										setEditingId(null)
-										setEditForm(null)
-									}}
-									disabled={loading}
-								>
-									Cancel
-								</Button>
-							</div>
-						)
-					}
 					return (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
@@ -244,7 +224,7 @@ export default function LeadsPage() {
 				},
 			},
 		],
-		[editingId, editForm, loading]
+		[loading]
 	)
 
 	// DataTable instance
@@ -401,43 +381,7 @@ export default function LeadsPage() {
 							table.getRowModel().rows.map(row => (
 								<TableRow key={row.id}>
 									{row.getVisibleCells().map(cell => (
-										<TableCell key={cell.id}>
-											{editingId === row.original.id && cell.column.id !== 'actions'
-												? (() => {
-														const col = cell.column.id
-														if (
-															col === 'leadSource' ||
-															col === 'contactName' ||
-															col === 'emailAddress' ||
-															col === 'phoneNumber' ||
-															col === 'serviceInterest' ||
-															col === 'leadStatus' ||
-															col === 'potentialValue' ||
-															col === 'followUpDate' ||
-															col === 'notes'
-														) {
-															return (
-																<Input
-																	name={col}
-																	value={editForm?.[col] || ''}
-																	onChange={handleEditChange}
-																/>
-															)
-														}
-														if (col === 'dateReceived') {
-															return (
-																<Input
-																	name="dateReceived"
-																	type="date"
-																	value={editForm?.dateReceived || ''}
-																	onChange={handleEditChange}
-																/>
-															)
-														}
-														return String(cell.getValue())
-												  })()
-												: flexRender(cell.column.columnDef.cell, cell.getContext())}
-										</TableCell>
+										<TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
 									))}
 								</TableRow>
 							))
@@ -455,6 +399,129 @@ export default function LeadsPage() {
 				</Table>
 			</div>
 			{/* Optionally, add pagination controls here */}
+			{/* Add Edit Dialog after the Add Dialog */}
+			<Dialog
+				open={editDialogOpen}
+				onOpenChange={setEditDialogOpen}
+			>
+				<DialogContent className="sm:max-w-[600px]">
+					<DialogHeader>
+						<DialogTitle>Edit Lead</DialogTitle>
+						<DialogDescription>Update the lead information below.</DialogDescription>
+					</DialogHeader>
+					<form
+						onSubmit={handleEditSubmit}
+						className="grid grid-cols-1 md:grid-cols-2 gap-4"
+					>
+						<div className="flex flex-col gap-2">
+							<Label htmlFor="edit-leadSource">Lead Source</Label>
+							<Input
+								name="leadSource"
+								id="edit-leadSource"
+								value={editForm?.leadSource || ''}
+								onChange={handleEditChange}
+								aria-label="Lead Source"
+							/>
+							<Label htmlFor="edit-dateReceived">Date Received</Label>
+							<Input
+								name="dateReceived"
+								id="edit-dateReceived"
+								type="date"
+								value={editForm?.dateReceived || ''}
+								onChange={handleEditChange}
+								required
+								aria-label="Date Received"
+							/>
+							<Label htmlFor="edit-contactName">Contact Name</Label>
+							<Input
+								name="contactName"
+								id="edit-contactName"
+								value={editForm?.contactName || ''}
+								onChange={handleEditChange}
+								required
+								aria-label="Contact Name"
+							/>
+							<Label htmlFor="edit-emailAddress">Email Address</Label>
+							<Input
+								name="emailAddress"
+								id="edit-emailAddress"
+								type="email"
+								value={editForm?.emailAddress || ''}
+								onChange={handleEditChange}
+								aria-label="Email Address"
+							/>
+							<Label htmlFor="edit-phoneNumber">Phone Number</Label>
+							<Input
+								name="phoneNumber"
+								id="edit-phoneNumber"
+								value={editForm?.phoneNumber || ''}
+								onChange={handleEditChange}
+								aria-label="Phone Number"
+							/>
+						</div>
+						<div className="flex flex-col gap-2">
+							<Label htmlFor="edit-serviceInterest">Service Interest</Label>
+							<Input
+								name="serviceInterest"
+								id="edit-serviceInterest"
+								value={editForm?.serviceInterest || ''}
+								onChange={handleEditChange}
+								aria-label="Service Interest"
+							/>
+							<Label htmlFor="edit-leadStatus">Lead Status</Label>
+							<Input
+								name="leadStatus"
+								id="edit-leadStatus"
+								value={editForm?.leadStatus || ''}
+								onChange={handleEditChange}
+								aria-label="Lead Status"
+							/>
+							<Label htmlFor="edit-potentialValue">Potential Value</Label>
+							<Input
+								name="potentialValue"
+								id="edit-potentialValue"
+								type="number"
+								value={editForm?.potentialValue || ''}
+								onChange={handleEditChange}
+								aria-label="Potential Value"
+							/>
+							<Label htmlFor="edit-followUpDate">Follow-Up Date</Label>
+							<Input
+								name="followUpDate"
+								id="edit-followUpDate"
+								type="date"
+								value={editForm?.followUpDate || ''}
+								onChange={handleEditChange}
+								aria-label="Follow-Up Date"
+							/>
+							<Label htmlFor="edit-notes">Notes/Comments</Label>
+							<textarea
+								name="notes"
+								id="edit-notes"
+								value={editForm?.notes || ''}
+								onChange={handleEditChange}
+								aria-label="Notes/Comments"
+								className="border rounded p-2 w-full min-h-[60px] bg-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+							/>
+						</div>
+						<div className="col-span-1 md:col-span-2 flex justify-end gap-2 mt-2">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setEditDialogOpen(false)}
+							>
+								Cancel
+							</Button>
+							<Button
+								type="submit"
+								disabled={loading}
+							>
+								{loading ? 'Saving...' : 'Save Changes'}
+							</Button>
+						</div>
+					</form>
+				</DialogContent>
+			</Dialog>
 		</main>
 	)
 }
