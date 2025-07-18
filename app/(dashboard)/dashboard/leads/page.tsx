@@ -17,9 +17,17 @@ import {
 	DialogDescription,
 } from '@/components/ui/dialog'
 import { useMemo } from 'react'
-import { ColumnDef, flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
+import {
+	ColumnDef,
+	flexRender,
+	getCoreRowModel,
+	getPaginationRowModel,
+	getSortedRowModel,
+	SortingState,
+	useReactTable,
+} from '@tanstack/react-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { MoreHorizontal } from 'lucide-react'
+import { MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -42,6 +50,19 @@ interface Lead {
 	potentialValue?: number
 	followUpDate?: string
 	notes?: string
+}
+
+interface EditFormData {
+	leadSource: string
+	dateReceived: string
+	contactName: string
+	emailAddress: string
+	phoneNumber: string
+	serviceInterest: string
+	leadStatus: string
+	potentialValue: string
+	followUpDate: string
+	notes: string
 }
 
 interface LeadSource {
@@ -74,8 +95,29 @@ export default function LeadsPage() {
 		followUpDate: '',
 		notes: '',
 	})
-	const [editForm, setEditForm] = useState<Lead | null>(null)
+	const [editForm, setEditForm] = useState<EditFormData | null>(null)
 	const [editDialogOpen, setEditDialogOpen] = useState(false)
+	const [sorting, setSorting] = useState<SortingState>([])
+
+	// Helper function to render sortable headers
+	const SortableHeader = ({ column, children }: { column: any; children: React.ReactNode }) => {
+		return (
+			<Button
+				variant="ghost"
+				onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+				className="h-auto p-0 font-medium hover:bg-transparent"
+			>
+				{children}
+				{column.getIsSorted() === 'asc' ? (
+					<ArrowUp className="ml-2 h-4 w-4" />
+				) : column.getIsSorted() === 'desc' ? (
+					<ArrowDown className="ml-2 h-4 w-4" />
+				) : (
+					<ArrowUpDown className="ml-2 h-4 w-4" />
+				)}
+			</Button>
+		)
+	}
 
 	// Helper to get current page leads
 	const columns = useMemo<ColumnDef<Lead>[]>(
@@ -103,18 +145,44 @@ export default function LeadsPage() {
 				enableSorting: false,
 				enableHiding: false,
 			},
-			{ accessorKey: 'leadSource', header: 'Lead Source', cell: info => info.getValue() },
-			{ accessorKey: 'dateReceived', header: 'Date Received', cell: info => (info.getValue() as string)?.slice(0, 10) },
-			{ accessorKey: 'contactName', header: 'Contact Name', cell: info => info.getValue() },
+			{
+				accessorKey: 'leadSource',
+				header: ({ column }) => <SortableHeader column={column}>Lead Source</SortableHeader>,
+				cell: info => info.getValue(),
+				enableSorting: true,
+			},
+			{
+				accessorKey: 'dateReceived',
+				header: ({ column }) => <SortableHeader column={column}>Date Received</SortableHeader>,
+				cell: info => (info.getValue() as string)?.slice(0, 10),
+				enableSorting: true,
+			},
+			{
+				accessorKey: 'contactName',
+				header: ({ column }) => <SortableHeader column={column}>Contact Name</SortableHeader>,
+				cell: info => info.getValue(),
+				enableSorting: true,
+			},
 			{ accessorKey: 'emailAddress', header: 'Email', cell: info => info.getValue() },
 			{ accessorKey: 'phoneNumber', header: 'Phone', cell: info => info.getValue() },
 			{ accessorKey: 'serviceInterest', header: 'Service Interest', cell: info => info.getValue() },
-			{ accessorKey: 'leadStatus', header: 'Status', cell: info => info.getValue() },
-			{ accessorKey: 'potentialValue', header: 'Potential Value', cell: info => info.getValue() },
+			{
+				accessorKey: 'leadStatus',
+				header: ({ column }) => <SortableHeader column={column}>Status</SortableHeader>,
+				cell: info => info.getValue(),
+				enableSorting: true,
+			},
+			{
+				accessorKey: 'potentialValue',
+				header: ({ column }) => <SortableHeader column={column}>Potential Value</SortableHeader>,
+				cell: info => info.getValue(),
+				enableSorting: true,
+			},
 			{
 				accessorKey: 'followUpDate',
-				header: 'Follow-Up Date',
+				header: ({ column }) => <SortableHeader column={column}>Follow-Up Date</SortableHeader>,
 				cell: info => (info.getValue() as string)?.slice(0, 10),
+				enableSorting: true,
 			},
 			{ accessorKey: 'notes', header: 'Notes', cell: info => info.getValue() },
 			{
@@ -169,6 +237,11 @@ export default function LeadsPage() {
 		columns,
 		getCoreRowModel: getCoreRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
+		getSortedRowModel: getSortedRowModel(),
+		onSortingChange: setSorting,
+		state: {
+			sorting,
+		},
 	})
 
 	const currentPageLeads = useMemo(
@@ -484,7 +557,21 @@ export default function LeadsPage() {
 							<TableBody>
 								{table.getRowModel().rows.length ? (
 									table.getRowModel().rows.map(row => (
-										<TableRow key={row.original.id}>
+										<TableRow
+											key={row.original.id}
+											className="cursor-pointer hover:bg-gray-50 transition-colors"
+											onClick={e => {
+												// Don't trigger row click if clicking on checkbox or dropdown
+												if (
+													(e.target as HTMLElement).closest('input[type="checkbox"]') ||
+													(e.target as HTMLElement).closest('[role="button"]') ||
+													(e.target as HTMLElement).closest('[data-radix-popper-content-wrapper]')
+												) {
+													return
+												}
+												handleEdit(row.original)
+											}}
+										>
 											{row.getVisibleCells().map(cell => (
 												<TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
 											))}
