@@ -63,6 +63,10 @@ A comprehensive SaaS starter template built with **Next.js** featuring authentic
 4. **Start the development server:**
 
    ```bash
+   # Quick setup and start (recommended)
+   pnpm dev:setup
+
+   # Or start manually
    pnpm dev
    ```
 
@@ -71,12 +75,59 @@ A comprehensive SaaS starter template built with **Next.js** featuring authentic
 
 ## Database Management
 
+### Multi-Computer Development Workflow
+
+When working across multiple computers, the database automatically handles schema changes:
+
+1. **Automatic Migration Check**: The `postinstall` script runs `db:migrate:auto` which checks for pending migrations and applies them
+2. **Schema Change Detection**: When schema changes are detected, you'll be prompted to reset the database
+3. **Seamless Updates**: Pull changes from the repo and run `npm install` to automatically handle database updates
+
+### Available Database Commands
+
+```bash
+# Interactive migration and seeding (recommended for development)
+pnpm db:migrate
+
+# Automated migration and seeding (for CI/CD)
+pnpm db:migrate:auto
+
+# Automated migration with auto-reset (destructive - use with caution)
+pnpm db:migrate:reset
+
+# Reset database to clean state with test data
+pnpm db:reset
+
+# Manual seeding only
+pnpm db:seed
+
+# Generate new migration files
+pnpm db:generate
+
+# Push schema changes directly (development only)
+pnpm db:push
+
+# Open Drizzle Studio
+pnpm db:studio
+
+# Check database status
+pnpm db:status
+```
+
+### Workflow for Schema Changes
+
+1. **Make schema changes** in `lib/db/schema.ts`
+2. **Generate migration**: `pnpm db:generate`
+3. **Commit and push** the migration files
+4. **On other computers**: Pull changes and run `npm install` (automatically handles migrations)
+5. **If needed**: Run `pnpm db:migrate` to interactively handle any conflicts
+
 ### Reset Database
 
 To reset your database to a clean state with test data:
 
 ```bash
-npx tsx lib/db/reset.ts
+pnpm db:reset
 ```
 
 ### Manual Seeding
@@ -84,7 +135,7 @@ npx tsx lib/db/reset.ts
 To run the seed script without resetting:
 
 ```bash
-npx tsx lib/db/seed.ts
+pnpm db:seed
 ```
 
 ## User Roles & Permissions
