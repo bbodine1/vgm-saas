@@ -128,13 +128,22 @@ async function seed() {
 		}
 
 		// Add 6 test leads for this org
+		const phoneNumbers = [
+			'+1-555-123-4567',
+			'+1-555-234-5678',
+			'+1-555-345-6789',
+			'+1-555-456-7890',
+			'+1-555-567-8901',
+			'+1-555-678-9012',
+		]
+
 		for (let i = 1; i <= 6; i++) {
 			await db.insert(leads).values({
 				leadSource: 'Website Form',
 				dateReceived: new Date(),
 				contactName: `Test Contact ${i}`,
 				emailAddress: `test${i}@example.com`,
-				phoneNumber: `555-000${i}`,
+				phoneNumber: phoneNumbers[i - 1],
 				serviceInterest: 'Consulting',
 				leadStatus: 'New',
 				potentialValue: 1000 * i,

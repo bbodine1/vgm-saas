@@ -4,6 +4,7 @@ import useSWR from 'swr'
 import { useState, useContext } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { PhoneInput } from '@/components/ui/phone-input'
 import { TeamContext } from '@/lib/context/TeamContext'
 import {
 	Dialog,
@@ -494,12 +495,12 @@ export default function LeadsPage() {
 									aria-label="Email Address"
 								/>
 								<Label htmlFor="phoneNumber">Phone Number</Label>
-								<Input
+								<PhoneInput
 									name="phoneNumber"
 									id="phoneNumber"
 									value={form.phoneNumber}
-									onChange={handleChange}
-									aria-label="Phone Number"
+									onChange={value => setForm({ ...form, phoneNumber: value || '' })}
+									placeholder="Enter phone number"
 								/>
 							</div>
 							<div className="flex flex-col gap-2">
@@ -725,12 +726,12 @@ export default function LeadsPage() {
 								aria-label="Email Address"
 							/>
 							<Label htmlFor="edit-phoneNumber">Phone Number</Label>
-							<Input
+							<PhoneInput
 								name="phoneNumber"
 								id="edit-phoneNumber"
 								value={editForm?.phoneNumber || ''}
-								onChange={handleEditChange}
-								aria-label="Phone Number"
+								onChange={value => editForm && setEditForm({ ...editForm, phoneNumber: value || '' })}
+								placeholder="Enter phone number"
 							/>
 						</div>
 						<div className="flex flex-col gap-2">
