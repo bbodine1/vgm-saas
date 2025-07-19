@@ -125,20 +125,19 @@ export default function LeadsPage() {
 	// Helper function to render sortable headers
 	const SortableHeader = ({ column, children }: { column: any; children: React.ReactNode }) => {
 		return (
-			<Button
-				variant="ghost"
+			<div
+				className="flex items-center gap-1 cursor-pointer select-none font-medium"
 				onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-				className="h-auto p-0 font-medium hover:bg-transparent"
 			>
 				{children}
 				{column.getIsSorted() === 'asc' ? (
-					<ArrowUp className="ml-2 h-4 w-4" />
+					<ArrowUp className="h-4 w-4" />
 				) : column.getIsSorted() === 'desc' ? (
-					<ArrowDown className="ml-2 h-4 w-4" />
+					<ArrowDown className="h-4 w-4" />
 				) : (
-					<ArrowUpDown className="ml-2 h-4 w-4" />
+					<ArrowUpDown className="h-4 w-4" />
 				)}
-			</Button>
+			</div>
 		)
 	}
 
@@ -175,6 +174,7 @@ export default function LeadsPage() {
 				header: ({ column }) => <SortableHeader column={column}>Date Received</SortableHeader>,
 				cell: info => (info.getValue() as string)?.slice(0, 10),
 				enableSorting: true,
+				size: 120,
 			},
 			{
 				accessorKey: 'contactName',
@@ -202,6 +202,7 @@ export default function LeadsPage() {
 				header: ({ column }) => <SortableHeader column={column}>Follow-Up Date</SortableHeader>,
 				cell: info => (info.getValue() as string)?.slice(0, 10),
 				enableSorting: true,
+				size: 120,
 			},
 			{ accessorKey: 'notes', header: 'Notes', cell: info => info.getValue() },
 			{
