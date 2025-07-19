@@ -15,6 +15,7 @@
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"db:status": "npx tsx lib/db/status.ts",
+		"db:cleanup": "npx tsx lib/db/cleanup-duplicates.ts",
 		"postinstall": "npm run db:migrate:auto"
 	},
 	"dependencies": {

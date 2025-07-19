@@ -2,7 +2,7 @@ import { stripe } from '../payments/stripe'
 import { db } from './drizzle'
 import { users, teams, teamMembers, leads, leadSources } from './schema'
 import { hashPassword } from '@/lib/auth/session'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 
 async function createStripeProducts() {
 	const baseProduct = await stripe.products.create({
@@ -158,12 +158,21 @@ async function seed() {
 		// Add default lead sources for this org
 		const defaultSources = ['Website Form', 'Social Media', 'Referral', 'Email Campaign', 'Cold Call', 'Trade Show']
 		for (const sourceName of defaultSources) {
-			await db.insert(leadSources).values({
-				name: sourceName,
-				teamId: team.id,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			})
+			// Check if lead source already exists for this team
+			const existing = await db
+				.select()
+				.from(leadSources)
+				.where(and(eq(leadSources.teamId, team.id), eq(leadSources.name, sourceName)))
+				.limit(1)
+
+			if (existing.length === 0) {
+				await db.insert(leadSources).values({
+					name: sourceName,
+					teamId: team.id,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+				})
+			}
 		}
 	}
 

@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, timestamp, integer } from 'drizzle-orm/pg-core'
+import { pgTable, serial, varchar, text, timestamp, integer, uniqueIndex } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 export const users = pgTable('users', {
@@ -89,16 +89,22 @@ export const leads = pgTable('leads', {
 	updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
-export const leadSources = pgTable('lead_sources', {
-	id: serial('id').primaryKey(),
-	name: varchar('name', { length: 100 }).notNull(),
-	teamId: integer('team_id')
-		.notNull()
-		.references(() => teams.id),
-	order: integer('order').notNull().default(0),
-	createdAt: timestamp('created_at').notNull().defaultNow(),
-	updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
+export const leadSources = pgTable(
+	'lead_sources',
+	{
+		id: serial('id').primaryKey(),
+		name: varchar('name', { length: 100 }).notNull(),
+		teamId: integer('team_id')
+			.notNull()
+			.references(() => teams.id),
+		order: integer('order').notNull().default(0),
+		createdAt: timestamp('created_at').notNull().defaultNow(),
+		updatedAt: timestamp('updated_at').notNull().defaultNow(),
+	},
+	table => ({
+		teamNameUnique: uniqueIndex('lead_sources_team_id_name_unique').on(table.teamId, table.name),
+	})
+)
 
 export const leadsRelations = relations(leads, ({ one }) => ({
 	team: one(teams, {

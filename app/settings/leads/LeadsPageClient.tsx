@@ -252,7 +252,7 @@ export default function LeadsPageClient({ team, leadSources: initialLeadSources 
 										<TableBody>
 											{(draggedSources || leadSources).map(leadSource => (
 												<DraggableRow
-													key={leadSource.id}
+													key={`${leadSource.id}-${leadSource.name}`}
 													id={leadSource.id}
 												>
 													{({ listeners }: { listeners: any }) => (

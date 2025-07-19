@@ -3,7 +3,7 @@ import { db } from '@/lib/db/drizzle'
 import { leadSources } from '@/lib/db/schema'
 import { getUser } from '@/lib/db/queries'
 import { getSession } from '@/lib/auth/session'
-import { eq, and, asc, max } from 'drizzle-orm'
+import { eq, and, asc, max, ne } from 'drizzle-orm'
 
 // List all lead sources for the current team
 export async function GET(request: NextRequest) {
@@ -46,6 +46,18 @@ export async function POST(request: NextRequest) {
 	if (!name) {
 		return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
 	}
+
+	// Check if lead source with this name already exists for this team
+	const existing = await db
+		.select()
+		.from(leadSources)
+		.where(and(eq(leadSources.teamId, teamId), eq(leadSources.name, name)))
+		.limit(1)
+
+	if (existing.length > 0) {
+		return NextResponse.json({ error: 'A lead source with this name already exists' }, { status: 400 })
+	}
+
 	// Get the current max order for this team
 	const [{ max: maxOrder }] = await db
 		.select({ max: max(leadSources.order) })
@@ -87,6 +99,18 @@ export async function PATCH(request: NextRequest) {
 
 	const { id, name } = body
 	if (!id) return NextResponse.json({ error: 'Missing lead source id' }, { status: 400 })
+
+	// Check if lead source with this name already exists for this team (excluding current item)
+	const existing = await db
+		.select()
+		.from(leadSources)
+		.where(and(eq(leadSources.teamId, teamId), eq(leadSources.name, name), ne(leadSources.id, id)))
+		.limit(1)
+
+	if (existing.length > 0) {
+		return NextResponse.json({ error: 'A lead source with this name already exists' }, { status: 400 })
+	}
+
 	const [updatedLeadSource] = await db
 		.update(leadSources)
 		.set({

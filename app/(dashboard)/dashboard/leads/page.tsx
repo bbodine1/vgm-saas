@@ -458,7 +458,7 @@ export default function LeadsPage() {
 												.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 												.map(source => (
 													<SelectItem
-														key={source.id}
+														key={`${source.id}-${source.name}`}
 														value={source.name}
 													>
 														{source.name}
@@ -699,7 +699,7 @@ export default function LeadsPage() {
 											.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 											.map(source => (
 												<SelectItem
-													key={source.id}
+													key={`${source.id}-${source.name}`}
 													value={source.name}
 												>
 													{source.name}
