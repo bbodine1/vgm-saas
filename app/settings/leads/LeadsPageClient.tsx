@@ -12,6 +12,7 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
+	DialogDescription,
 	DialogFooter,
 	DialogClose,
 } from '@/components/ui/dialog'
@@ -182,6 +183,9 @@ export default function LeadsPageClient({ team, leadSources: initialLeadSources 
 							<DialogContent>
 								<DialogHeader>
 									<DialogTitle>Add New Lead Source</DialogTitle>
+									<DialogDescription>
+										Create a new lead source to categorize where your leads come from.
+									</DialogDescription>
 								</DialogHeader>
 								<form
 									onSubmit={handleSubmit}
@@ -339,6 +343,7 @@ export default function LeadsPageClient({ team, leadSources: initialLeadSources 
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Edit Lead Source</DialogTitle>
+						<DialogDescription>Update the name of this lead source.</DialogDescription>
 					</DialogHeader>
 					<form
 						onSubmit={handleEditSubmit}
