@@ -6,7 +6,7 @@ A comprehensive SaaS starter template built with **Next.js** featuring authentic
 
 - **Authentication & Authorization**: Email/password auth with JWT sessions and role-based access control
 - **Team Management**: Multi-tenant organizations with member invitations and role management
-- **Lead Management**: CRUD operations for leads with team-based data isolation
+- **Lead Management**: CRUD operations for leads with team-based data isolation, customizable lead sources and service interests
 - **Payment Integration**: Stripe Checkout and Customer Portal for subscription management
 - **Activity Logging**: Comprehensive audit trail for all user actions
 - **Modern UI**: Built with shadcn/ui components and Tailwind CSS
@@ -122,6 +122,19 @@ pnpm db:status
 4. **On other computers**: Pull changes and run `npm install` (automatically handles migrations)
 5. **If needed**: Run `pnpm db:migrate` to interactively handle any conflicts
 
+### Database Tables
+
+- **users**: User accounts with role-based permissions
+- **teams**: Organizations with subscription management
+- **team_members**: User-organization relationships
+- **leads**: Lead records with contact and business information
+- **lead_sources**: Customizable lead source categories per team
+- **service_interests**: Customizable service interest categories per team
+- **lead_statuses**: Customizable lead status categories per team
+- **activity_logs**: Audit trail for user actions
+- **invitations**: Team member invitations
+- **password_reset_tokens**: Password reset functionality
+
 ### Reset Database
 
 To reset your database to a clean state with test data:
@@ -170,6 +183,35 @@ The database comes with pre-configured test accounts for development and testing
 #### Test Data
 
 Each organization comes with 6 sample leads marked as "TEST" for easy identification and testing.
+
+## Lead Management
+
+### Lead Sources
+
+- **Customizable**: Each team can create and manage their own lead sources
+- **Sortable**: Drag-and-drop reordering in the settings
+- **Team-scoped**: Lead sources are isolated to each organization
+- **Default sources**: Website Form, Social Media, Referral, Email Campaign, Cold Call, Trade Show
+
+### Service Interests
+
+- **Customizable**: Each team can create and manage their own service interests
+- **Sortable**: Drag-and-drop reordering in the settings
+- **Team-scoped**: Service interests are isolated to each organization
+- **Default interests**: Web Development, Mobile Development, Consulting, Design, Marketing, Support
+
+### Lead Statuses
+
+- **Customizable**: Each team can create and manage their own lead statuses
+- **Team-scoped**: Lead statuses are isolated to each organization
+- **Default statuses**: New, Qualified, Proposal Sent, Negotiating, Closed Won, Closed Lost
+
+### Lead Fields
+
+- **Contact Information**: Name, email, phone number
+- **Lead Details**: Source, service interest, status, potential value
+- **Follow-up**: Follow-up date and notes
+- **Phone Validation**: Automatic E.164 formatting for international phone numbers
 
 ## Stripe Integration
 
@@ -220,6 +262,10 @@ Ensure these are set in production:
 │   ├── (dashboard)/       # Protected dashboard routes
 │   ├── (login)/          # Authentication pages
 │   ├── api/              # API routes
+│   │   ├── lead-sources/  # Lead sources management
+│   │   ├── service-interests/ # Service interests management
+│   │   ├── lead-statuses/  # Lead statuses management
+│   │   └── stripe/       # Stripe integration
 │   └── settings/         # User settings pages
 ├── components/           # Reusable UI components
 ├── lib/                  # Utility libraries

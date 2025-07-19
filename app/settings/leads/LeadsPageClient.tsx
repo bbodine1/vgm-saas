@@ -35,13 +35,15 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
-import { TeamDataWithMembers, LeadSource } from '@/lib/db/schema'
+import { TeamDataWithMembers, LeadSource, ServiceInterest, LeadStatus } from '@/lib/db/schema'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 type LeadsPageClientProps = {
 	team: TeamDataWithMembers
 	leadSources: LeadSource[]
+	serviceInterests: ServiceInterest[]
+	leadStatuses: LeadStatus[]
 }
 
 function DraggableRow({ id, children }: { id: number; children: (props: { listeners: any }) => React.ReactNode }) {
@@ -62,17 +64,38 @@ function DraggableRow({ id, children }: { id: number; children: (props: { listen
 	)
 }
 
-export default function LeadsPageClient({ team, leadSources: initialLeadSources }: LeadsPageClientProps) {
-	const { data: leadSources = initialLeadSources, mutate } = useSWR<LeadSource[]>(
+export default function LeadsPageClient({
+	team,
+	leadSources: initialLeadSources,
+	serviceInterests: initialServiceInterests,
+	leadStatuses: initialLeadStatuses,
+}: LeadsPageClientProps) {
+	const { data: leadSources = initialLeadSources, mutate: mutateLeadSources } = useSWR<LeadSource[]>(
 		`/api/lead-sources?teamId=${team.id}`,
 		fetcher,
 		{ fallbackData: initialLeadSources }
 	)
+	const { data: serviceInterests = initialServiceInterests, mutate: mutateServiceInterests } = useSWR<
+		ServiceInterest[]
+	>(`/api/service-interests?teamId=${team.id}`, fetcher, { fallbackData: initialServiceInterests })
+	const { data: leadStatuses = initialLeadStatuses, mutate: mutateLeadStatuses } = useSWR<LeadStatus[]>(
+		`/api/lead-statuses?teamId=${team.id}`,
+		fetcher,
+		{ fallbackData: initialLeadStatuses }
+	)
 	const [form, setForm] = useState({ name: '' })
 	const [editForm, setEditForm] = useState<{ id: number; name: string } | null>(null)
+	const [serviceForm, setServiceForm] = useState({ name: '' })
+	const [editServiceForm, setEditServiceForm] = useState<{ id: number; name: string } | null>(null)
+	const [statusForm, setStatusForm] = useState({ name: '' })
+	const [editStatusForm, setEditStatusForm] = useState<{ id: number; name: string } | null>(null)
 	const [loading, setLoading] = useState(false)
 	const [dialogOpen, setDialogOpen] = useState(false)
 	const [editDialogOpen, setEditDialogOpen] = useState(false)
+	const [serviceDialogOpen, setServiceDialogOpen] = useState(false)
+	const [editServiceDialogOpen, setEditServiceDialogOpen] = useState(false)
+	const [statusDialogOpen, setStatusDialogOpen] = useState(false)
+	const [editStatusDialogOpen, setEditStatusDialogOpen] = useState(false)
 
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 	const [draggedSources, setDraggedSources] = useState<LeadSource[] | null>(null)
@@ -94,7 +117,7 @@ export default function LeadsPageClient({ team, leadSources: initialLeadSources 
 			body: JSON.stringify(form),
 		})
 		if (res.ok) {
-			await mutate()
+			await mutateLeadSources()
 			setForm({ name: '' })
 			setDialogOpen(false)
 		}
@@ -116,7 +139,7 @@ export default function LeadsPageClient({ team, leadSources: initialLeadSources 
 			body: JSON.stringify(editForm),
 		})
 		if (res.ok) {
-			await mutate()
+			await mutateLeadSources()
 			setEditForm(null)
 			setEditDialogOpen(false)
 		}
@@ -131,7 +154,7 @@ export default function LeadsPageClient({ team, leadSources: initialLeadSources 
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ id }),
 		})
-		await mutate()
+		await mutateLeadSources()
 		setLoading(false)
 	}
 
@@ -151,8 +174,126 @@ export default function LeadsPageClient({ team, leadSources: initialLeadSources 
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(orderPayload),
 		})
-		await mutate()
+		await mutateLeadSources()
 		setDraggedSources(null)
+		setLoading(false)
+	}
+
+	// Service Interest handlers
+	const handleServiceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setServiceForm({ ...serviceForm, [e.target.name]: e.target.value })
+	}
+
+	const handleServiceEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (editServiceForm) setEditServiceForm({ ...editServiceForm, [e.target.name]: e.target.value })
+	}
+
+	const handleServiceSubmit = async (e: React.FormEvent) => {
+		e.preventDefault()
+		setLoading(true)
+		const res = await fetch('/api/service-interests', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ ...serviceForm, teamId: team.id }),
+		})
+		if (res.ok) {
+			await mutateServiceInterests()
+			setServiceForm({ name: '' })
+			setServiceDialogOpen(false)
+		}
+		setLoading(false)
+	}
+
+	const handleServiceEdit = (serviceInterest: ServiceInterest) => {
+		setEditServiceForm({ id: serviceInterest.id, name: serviceInterest.name })
+		setEditServiceDialogOpen(true)
+	}
+
+	const handleServiceEditSubmit = async (e: React.FormEvent) => {
+		e.preventDefault()
+		if (!editServiceForm) return
+		setLoading(true)
+		const res = await fetch('/api/service-interests', {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(editServiceForm),
+		})
+		if (res.ok) {
+			await mutateServiceInterests()
+			setEditServiceForm(null)
+			setEditServiceDialogOpen(false)
+		}
+		setLoading(false)
+	}
+
+	const handleServiceDelete = async (id: number) => {
+		if (!confirm('Delete this service interest?')) return
+		setLoading(true)
+		await fetch('/api/service-interests', {
+			method: 'DELETE',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ id }),
+		})
+		await mutateServiceInterests()
+		setLoading(false)
+	}
+
+	// Lead Status handlers
+	const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setStatusForm({ ...statusForm, [e.target.name]: e.target.value })
+	}
+
+	const handleStatusEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (editStatusForm) setEditStatusForm({ ...editStatusForm, [e.target.name]: e.target.value })
+	}
+
+	const handleStatusSubmit = async (e: React.FormEvent) => {
+		e.preventDefault()
+		setLoading(true)
+		const res = await fetch('/api/lead-statuses', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ ...statusForm, teamId: team.id }),
+		})
+		if (res.ok) {
+			await mutateLeadStatuses()
+			setStatusForm({ name: '' })
+			setStatusDialogOpen(false)
+		}
+		setLoading(false)
+	}
+
+	const handleStatusEdit = (leadStatus: LeadStatus) => {
+		setEditStatusForm({ id: leadStatus.id, name: leadStatus.name })
+		setEditStatusDialogOpen(true)
+	}
+
+	const handleStatusEditSubmit = async (e: React.FormEvent) => {
+		e.preventDefault()
+		if (!editStatusForm) return
+		setLoading(true)
+		const res = await fetch('/api/lead-statuses', {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(editStatusForm),
+		})
+		if (res.ok) {
+			await mutateLeadStatuses()
+			setEditStatusForm(null)
+			setEditStatusDialogOpen(false)
+		}
+		setLoading(false)
+	}
+
+	const handleStatusDelete = async (id: number) => {
+		if (!confirm('Delete this lead status?')) return
+		setLoading(true)
+		await fetch('/api/lead-statuses', {
+			method: 'DELETE',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ id }),
+		})
+		await mutateLeadStatuses()
 		setLoading(false)
 	}
 
@@ -311,19 +452,251 @@ export default function LeadsPageClient({ team, leadSources: initialLeadSources 
 					</CardContent>
 				</Card>
 
-				{/* Empty Card 1 */}
+				{/* Service Interests Card */}
 				<Card>
-					<CardHeader>
-						<CardTitle className="text-lg font-medium">Coming Soon</CardTitle>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+						<CardTitle className="text-lg font-medium">Service Interests</CardTitle>
+						<Dialog
+							open={serviceDialogOpen}
+							onOpenChange={setServiceDialogOpen}
+						>
+							<DialogTrigger asChild>
+								<Button
+									size="sm"
+									className="bg-blue-500 hover:bg-blue-600 text-white"
+								>
+									<Plus className="h-4 w-4 mr-2" />
+									Add Service
+								</Button>
+							</DialogTrigger>
+							<DialogContent>
+								<DialogHeader>
+									<DialogTitle>Add New Service Interest</DialogTitle>
+									<DialogDescription>
+										Create a new service interest to categorize what services your leads are interested in.
+									</DialogDescription>
+								</DialogHeader>
+								<form
+									onSubmit={handleServiceSubmit}
+									className="space-y-4"
+								>
+									<div>
+										<Label htmlFor="service-name">Name</Label>
+										<Input
+											name="name"
+											id="service-name"
+											value={serviceForm.name}
+											onChange={handleServiceChange}
+											required
+											placeholder="e.g., Web Development"
+										/>
+									</div>
+									<DialogFooter>
+										<DialogClose asChild>
+											<Button
+												type="button"
+												variant="outline"
+											>
+												Cancel
+											</Button>
+										</DialogClose>
+										<Button
+											type="submit"
+											disabled={loading}
+											className="bg-blue-500 hover:bg-blue-600 text-white"
+										>
+											{loading ? (
+												<>
+													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+													Adding...
+												</>
+											) : (
+												'Add Service Interest'
+											)}
+										</Button>
+									</DialogFooter>
+								</form>
+							</DialogContent>
+						</Dialog>
 					</CardHeader>
 					<CardContent>
-						<div className="text-center py-8">
-							<p className="text-muted-foreground">Additional lead management features coming soon.</p>
-						</div>
+						{serviceInterests.length > 0 ? (
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Name</TableHead>
+										<TableHead className="w-[100px]">Actions</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{serviceInterests.map(serviceInterest => (
+										<TableRow key={serviceInterest.id}>
+											<TableCell className="font-medium">{serviceInterest.name}</TableCell>
+											<TableCell>
+												<DropdownMenu>
+													<DropdownMenuTrigger asChild>
+														<Button
+															variant="ghost"
+															className="h-8 w-8 p-0"
+														>
+															<span className="sr-only">Open menu</span>
+															<MoreHorizontal className="h-4 w-4" />
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent align="end">
+														<DropdownMenuLabel>Actions</DropdownMenuLabel>
+														<DropdownMenuItem
+															onClick={() => handleServiceEdit(serviceInterest)}
+															disabled={loading}
+														>
+															<Edit className="h-4 w-4 mr-2" />
+															Edit
+														</DropdownMenuItem>
+														<DropdownMenuSeparator />
+														<DropdownMenuItem
+															onClick={() => handleServiceDelete(serviceInterest.id)}
+															disabled={loading}
+														>
+															<Trash2 className="h-4 w-4 mr-2" />
+															Delete
+														</DropdownMenuItem>
+													</DropdownMenuContent>
+												</DropdownMenu>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						) : (
+							<div className="text-center py-8">
+								<p className="text-muted-foreground">No service interests found. Add your first one to get started.</p>
+							</div>
+						)}
 					</CardContent>
 				</Card>
 
-				{/* Empty Card 2 */}
+				{/* Lead Statuses Card */}
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+						<CardTitle className="text-lg font-medium">Lead Statuses</CardTitle>
+						<Dialog
+							open={statusDialogOpen}
+							onOpenChange={setStatusDialogOpen}
+						>
+							<DialogTrigger asChild>
+								<Button
+									size="sm"
+									className="bg-green-500 hover:bg-green-600 text-white"
+								>
+									<Plus className="h-4 w-4 mr-2" />
+									Add Status
+								</Button>
+							</DialogTrigger>
+							<DialogContent>
+								<DialogHeader>
+									<DialogTitle>Add New Lead Status</DialogTitle>
+									<DialogDescription>Create a new lead status to track the progress of your leads.</DialogDescription>
+								</DialogHeader>
+								<form
+									onSubmit={handleStatusSubmit}
+									className="space-y-4"
+								>
+									<div>
+										<Label htmlFor="status-name">Name</Label>
+										<Input
+											name="name"
+											id="status-name"
+											value={statusForm.name}
+											onChange={handleStatusChange}
+											required
+											placeholder="e.g., Qualified"
+										/>
+									</div>
+									<DialogFooter>
+										<DialogClose asChild>
+											<Button
+												type="button"
+												variant="outline"
+											>
+												Cancel
+											</Button>
+										</DialogClose>
+										<Button
+											type="submit"
+											disabled={loading}
+											className="bg-green-500 hover:bg-green-600 text-white"
+										>
+											{loading ? (
+												<>
+													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+													Adding...
+												</>
+											) : (
+												'Add Lead Status'
+											)}
+										</Button>
+									</DialogFooter>
+								</form>
+							</DialogContent>
+						</Dialog>
+					</CardHeader>
+					<CardContent>
+						{leadStatuses.length > 0 ? (
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Name</TableHead>
+										<TableHead className="w-[100px]">Actions</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{leadStatuses.map(leadStatus => (
+										<TableRow key={leadStatus.id}>
+											<TableCell className="font-medium">{leadStatus.name}</TableCell>
+											<TableCell>
+												<DropdownMenu>
+													<DropdownMenuTrigger asChild>
+														<Button
+															variant="ghost"
+															className="h-8 w-8 p-0"
+														>
+															<span className="sr-only">Open menu</span>
+															<MoreHorizontal className="h-4 w-4" />
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent align="end">
+														<DropdownMenuLabel>Actions</DropdownMenuLabel>
+														<DropdownMenuItem
+															onClick={() => handleStatusEdit(leadStatus)}
+															disabled={loading}
+														>
+															<Edit className="h-4 w-4 mr-2" />
+															Edit
+														</DropdownMenuItem>
+														<DropdownMenuSeparator />
+														<DropdownMenuItem
+															onClick={() => handleStatusDelete(leadStatus.id)}
+															disabled={loading}
+														>
+															<Trash2 className="h-4 w-4 mr-2" />
+															Delete
+														</DropdownMenuItem>
+													</DropdownMenuContent>
+												</DropdownMenu>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						) : (
+							<div className="text-center py-8">
+								<p className="text-muted-foreground">No lead statuses found. Add your first one to get started.</p>
+							</div>
+						)}
+					</CardContent>
+				</Card>
+
+				{/* Empty Card */}
 				<Card>
 					<CardHeader>
 						<CardTitle className="text-lg font-medium">Coming Soon</CardTitle>
@@ -372,6 +745,108 @@ export default function LeadsPageClient({ team, leadSources: initialLeadSources 
 								type="submit"
 								disabled={loading}
 								className="bg-orange-500 hover:bg-orange-600 text-white"
+							>
+								{loading ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Saving...
+									</>
+								) : (
+									'Save Changes'
+								)}
+							</Button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={editServiceDialogOpen}
+				onOpenChange={setEditServiceDialogOpen}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Edit Service Interest</DialogTitle>
+						<DialogDescription>Update the name of this service interest.</DialogDescription>
+					</DialogHeader>
+					<form
+						onSubmit={handleServiceEditSubmit}
+						className="space-y-4"
+					>
+						<div>
+							<Label htmlFor="edit-service-name">Name</Label>
+							<Input
+								name="name"
+								id="edit-service-name"
+								value={editServiceForm?.name || ''}
+								onChange={handleServiceEditChange}
+								required
+								placeholder="e.g., Web Development"
+							/>
+						</div>
+						<DialogFooter>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setEditServiceDialogOpen(false)}
+							>
+								Cancel
+							</Button>
+							<Button
+								type="submit"
+								disabled={loading}
+								className="bg-blue-500 hover:bg-blue-600 text-white"
+							>
+								{loading ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Saving...
+									</>
+								) : (
+									'Save Changes'
+								)}
+							</Button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={editStatusDialogOpen}
+				onOpenChange={setEditStatusDialogOpen}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Edit Lead Status</DialogTitle>
+						<DialogDescription>Update the name of this lead status.</DialogDescription>
+					</DialogHeader>
+					<form
+						onSubmit={handleStatusEditSubmit}
+						className="space-y-4"
+					>
+						<div>
+							<Label htmlFor="edit-status-name">Name</Label>
+							<Input
+								name="name"
+								id="edit-status-name"
+								value={editStatusForm?.name || ''}
+								onChange={handleStatusEditChange}
+								required
+								placeholder="e.g., Qualified"
+							/>
+						</div>
+						<DialogFooter>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setEditStatusDialogOpen(false)}
+							>
+								Cancel
+							</Button>
+							<Button
+								type="submit"
+								disabled={loading}
+								className="bg-green-500 hover:bg-green-600 text-white"
 							>
 								{loading ? (
 									<>

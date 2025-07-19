@@ -106,6 +106,40 @@ export const leadSources = pgTable(
 	})
 )
 
+export const serviceInterests = pgTable(
+	'service_interests',
+	{
+		id: serial('id').primaryKey(),
+		name: varchar('name', { length: 100 }).notNull(),
+		teamId: integer('team_id')
+			.notNull()
+			.references(() => teams.id),
+		order: integer('order').notNull().default(0),
+		createdAt: timestamp('created_at').notNull().defaultNow(),
+		updatedAt: timestamp('updated_at').notNull().defaultNow(),
+	},
+	table => ({
+		teamNameUnique: uniqueIndex('service_interests_team_id_name_unique').on(table.teamId, table.name),
+	})
+)
+
+export const leadStatuses = pgTable(
+	'lead_statuses',
+	{
+		id: serial('id').primaryKey(),
+		name: varchar('name', { length: 100 }).notNull(),
+		teamId: integer('team_id')
+			.notNull()
+			.references(() => teams.id),
+		order: integer('order').notNull().default(0),
+		createdAt: timestamp('created_at').notNull().defaultNow(),
+		updatedAt: timestamp('updated_at').notNull().defaultNow(),
+	},
+	table => ({
+		teamNameUnique: uniqueIndex('lead_statuses_team_id_name_unique').on(table.teamId, table.name),
+	})
+)
+
 export const leadsRelations = relations(leads, ({ one }) => ({
 	team: one(teams, {
 		fields: [leads.teamId],
@@ -120,12 +154,28 @@ export const leadSourcesRelations = relations(leadSources, ({ one }) => ({
 	}),
 }))
 
+export const serviceInterestsRelations = relations(serviceInterests, ({ one }) => ({
+	team: one(teams, {
+		fields: [serviceInterests.teamId],
+		references: [teams.id],
+	}),
+}))
+
+export const leadStatusesRelations = relations(leadStatuses, ({ one }) => ({
+	team: one(teams, {
+		fields: [leadStatuses.teamId],
+		references: [teams.id],
+	}),
+}))
+
 export const teamsRelations = relations(teams, ({ many }) => ({
 	teamMembers: many(teamMembers),
 	activityLogs: many(activityLogs),
 	invitations: many(invitations),
 	leads: many(leads),
 	leadSources: many(leadSources),
+	serviceInterests: many(serviceInterests),
+	leadStatuses: many(leadStatuses),
 }))
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -193,6 +243,10 @@ export type Lead = typeof leads.$inferSelect
 export type NewLead = typeof leads.$inferInsert
 export type LeadSource = typeof leadSources.$inferSelect
 export type NewLeadSource = typeof leadSources.$inferInsert
+export type ServiceInterest = typeof serviceInterests.$inferSelect
+export type NewServiceInterest = typeof serviceInterests.$inferInsert
+export type LeadStatus = typeof leadStatuses.$inferSelect
+export type NewLeadStatus = typeof leadStatuses.$inferInsert
 
 export enum ActivityType {
 	SIGN_UP = 'SIGN_UP',

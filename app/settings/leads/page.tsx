@@ -1,7 +1,7 @@
 import LeadsPageClient from './LeadsPageClient'
 import { getTeamForUser } from '@/lib/db/queries'
 import { db } from '@/lib/db/drizzle'
-import { leadSources } from '@/lib/db/schema'
+import { leadSources, serviceInterests, leadStatuses } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 
 export default async function LeadsPage() {
@@ -17,11 +17,15 @@ export default async function LeadsPage() {
 	}
 
 	const teamLeadSources = await db.select().from(leadSources).where(eq(leadSources.teamId, team.id))
+	const teamServiceInterests = await db.select().from(serviceInterests).where(eq(serviceInterests.teamId, team.id))
+	const teamLeadStatuses = await db.select().from(leadStatuses).where(eq(leadStatuses.teamId, team.id))
 
 	return (
 		<LeadsPageClient
 			team={team}
 			leadSources={teamLeadSources}
+			serviceInterests={teamServiceInterests}
+			leadStatuses={teamLeadStatuses}
 		/>
 	)
 }

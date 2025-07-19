@@ -27,7 +27,21 @@
       "idx": 3,
       "version": "7",
       "when": 1752962215629,
-      "tag": "0003_easy_lizard",
+      "tag": "0003_update_leads_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1752962821620,
+      "tag": "0004_broad_stellaris",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1752967101483,
+      "tag": "0005_graceful_reaper",
       "breakpoints": true
     }
   ]

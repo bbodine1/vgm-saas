@@ -1,6 +1,6 @@
 import { stripe } from '../payments/stripe'
 import { db } from './drizzle'
-import { users, teams, teamMembers, leads, leadSources } from './schema'
+import { users, teams, teamMembers, leads, leadSources, serviceInterests, leadStatuses } from './schema'
 import { hashPassword } from '@/lib/auth/session'
 import { eq, and } from 'drizzle-orm'
 
@@ -137,15 +137,26 @@ async function seed() {
 			'+1-555-678-9012',
 		]
 
+		const serviceInterestsList = [
+			'Web Development',
+			'Mobile Development',
+			'Consulting',
+			'Design',
+			'Marketing',
+			'Support',
+		]
+		const leadSourcesList = ['Website Form', 'Social Media', 'Referral', 'Email Campaign', 'Cold Call', 'Trade Show']
+		const leadStatusesList = ['New', 'Qualified', 'Proposal Sent', 'Negotiating', 'Closed Won', 'Closed Lost']
+
 		for (let i = 1; i <= 6; i++) {
 			await db.insert(leads).values({
-				leadSource: 'Website Form',
+				leadSource: leadSourcesList[i - 1],
 				dateReceived: new Date(),
 				contactName: `Test Contact ${i}`,
 				emailAddress: `test${i}@example.com`,
 				phoneNumber: phoneNumbers[i - 1],
-				serviceInterest: 'Consulting',
-				leadStatus: 'New',
+				serviceInterest: serviceInterestsList[i - 1],
+				leadStatus: leadStatusesList[i - 1],
 				potentialValue: 1000 * i,
 				followUpDate: new Date(Date.now() + 86400000 * i),
 				notes: 'Seeded test lead',
@@ -168,6 +179,53 @@ async function seed() {
 			if (existing.length === 0) {
 				await db.insert(leadSources).values({
 					name: sourceName,
+					teamId: team.id,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+				})
+			}
+		}
+
+		// Add default service interests for this org
+		const defaultServiceInterests = [
+			'Web Development',
+			'Mobile Development',
+			'Consulting',
+			'Design',
+			'Marketing',
+			'Support',
+		]
+		for (const serviceName of defaultServiceInterests) {
+			// Check if service interest already exists for this team
+			const existing = await db
+				.select()
+				.from(serviceInterests)
+				.where(and(eq(serviceInterests.teamId, team.id), eq(serviceInterests.name, serviceName)))
+				.limit(1)
+
+			if (existing.length === 0) {
+				await db.insert(serviceInterests).values({
+					name: serviceName,
+					teamId: team.id,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+				})
+			}
+		}
+
+		// Add default lead statuses for this org
+		const defaultLeadStatuses = ['New', 'Qualified', 'Proposal Sent', 'Negotiating', 'Closed Won', 'Closed Lost']
+		for (const statusName of defaultLeadStatuses) {
+			// Check if lead status already exists for this team
+			const existing = await db
+				.select()
+				.from(leadStatuses)
+				.where(and(eq(leadStatuses.teamId, team.id), eq(leadStatuses.name, statusName)))
+				.limit(1)
+
+			if (existing.length === 0) {
+				await db.insert(leadStatuses).values({
+					name: statusName,
 					teamId: team.id,
 					createdAt: new Date(),
 					updatedAt: new Date(),

@@ -84,7 +84,46 @@ interface LeadSource {
 	order?: number
 }
 
+interface ServiceInterest {
+	id: number
+	name: string
+	order?: number
+}
+
+interface LeadStatus {
+	id: number
+	name: string
+	order?: number
+}
+
 const fetcher = (url: string) => fetch(url).then(res => res.json())
+
+// Utility function to convert phone number to E.164 format
+const formatPhoneNumber = (phoneNumber: string | undefined): string | undefined => {
+	if (!phoneNumber) return undefined
+
+	// If it's already in E.164 format, return as is
+	if (phoneNumber.startsWith('+') && !phoneNumber.includes('-') && !phoneNumber.includes(' ')) {
+		return phoneNumber
+	}
+
+	// Remove all non-digit characters except the leading +
+	let cleaned = phoneNumber.replace(/[^\d+]/g, '')
+
+	// If it doesn't start with +, assume it's a US number and add +1
+	if (!cleaned.startsWith('+')) {
+		cleaned = '+1' + cleaned
+	}
+
+	// Basic validation - should be at least 10 digits after the +
+	const digitsAfterPlus = cleaned.replace(/\D/g, '').length
+	if (digitsAfterPlus >= 10) {
+		return cleaned
+	}
+
+	// If validation fails, return the original number
+	return phoneNumber
+}
 
 export default function LeadsPage() {
 	const { teamId } = useContext(TeamContext)
@@ -98,7 +137,18 @@ export default function LeadsPage() {
 	})
 	const { data: leadSources = [], isLoading: sourcesLoading } = useSWR<LeadSource[]>(
 		teamId ? `/api/lead-sources?teamId=${teamId}` : null,
-		fetcher
+		fetcher,
+		{ fallbackData: [] }
+	)
+	const { data: serviceInterests = [], isLoading: serviceInterestsLoading } = useSWR<ServiceInterest[]>(
+		teamId ? `/api/service-interests?teamId=${teamId}` : null,
+		fetcher,
+		{ fallbackData: [] }
+	)
+	const { data: leadStatuses = [], isLoading: leadStatusesLoading } = useSWR<LeadStatus[]>(
+		teamId ? `/api/lead-statuses?teamId=${teamId}` : null,
+		fetcher,
+		{ fallbackData: [] }
 	)
 
 	const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([])
@@ -454,7 +504,7 @@ export default function LeadsPage() {
 									<SelectContent>
 										<SelectGroup>
 											<SelectLabel>Lead Sources</SelectLabel>
-											{[...leadSources]
+											{(leadSources || [])
 												.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 												.map(source => (
 													<SelectItem
@@ -499,28 +549,60 @@ export default function LeadsPage() {
 								<PhoneInput
 									name="phoneNumber"
 									id="phoneNumber"
-									value={form.phoneNumber}
+									value={formatPhoneNumber(form.phoneNumber)}
 									onChange={value => setForm({ ...form, phoneNumber: value || '' })}
 									placeholder="Enter phone number"
 								/>
 							</div>
 							<div className="flex flex-col gap-2">
 								<Label htmlFor="serviceInterest">Service Interest</Label>
-								<Input
-									name="serviceInterest"
-									id="serviceInterest"
+								<Select
+									onValueChange={(value: string) => setForm({ ...form, serviceInterest: value })}
 									value={form.serviceInterest}
-									onChange={handleChange}
-									aria-label="Service Interest"
-								/>
+								>
+									<SelectTrigger className="border rounded p-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary">
+										<SelectValue placeholder="Select a service interest" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectGroup>
+											<SelectLabel>Service Interests</SelectLabel>
+											{(serviceInterests || [])
+												.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+												.map(serviceInterest => (
+													<SelectItem
+														key={serviceInterest.id}
+														value={serviceInterest.name}
+													>
+														{serviceInterest.name}
+													</SelectItem>
+												))}
+										</SelectGroup>
+									</SelectContent>
+								</Select>
 								<Label htmlFor="leadStatus">Lead Status</Label>
-								<Input
-									name="leadStatus"
-									id="leadStatus"
+								<Select
+									onValueChange={(value: string) => setForm({ ...form, leadStatus: value })}
 									value={form.leadStatus}
-									onChange={handleChange}
-									aria-label="Lead Status"
-								/>
+								>
+									<SelectTrigger className="border rounded p-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary">
+										<SelectValue placeholder="Select a lead status" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectGroup>
+											<SelectLabel>Lead Statuses</SelectLabel>
+											{(leadStatuses || [])
+												.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+												.map(status => (
+													<SelectItem
+														key={`${status.id}-${status.name}`}
+														value={status.name}
+													>
+														{status.name}
+													</SelectItem>
+												))}
+										</SelectGroup>
+									</SelectContent>
+								</Select>
 								<Label htmlFor="potentialValue">Potential Value</Label>
 								<Input
 									name="potentialValue"
@@ -695,7 +777,7 @@ export default function LeadsPage() {
 								<SelectContent>
 									<SelectGroup>
 										<SelectLabel>Lead Sources</SelectLabel>
-										{[...leadSources]
+										{(leadSources || [])
 											.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 											.map(source => (
 												<SelectItem
@@ -730,28 +812,60 @@ export default function LeadsPage() {
 							<PhoneInput
 								name="phoneNumber"
 								id="edit-phoneNumber"
-								value={editForm?.phoneNumber || ''}
+								value={formatPhoneNumber(editForm?.phoneNumber)}
 								onChange={value => editForm && setEditForm({ ...editForm, phoneNumber: value || '' })}
 								placeholder="Enter phone number"
 							/>
 						</div>
 						<div className="flex flex-col gap-2">
 							<Label htmlFor="edit-serviceInterest">Service Interest</Label>
-							<Input
-								name="serviceInterest"
-								id="edit-serviceInterest"
+							<Select
+								onValueChange={(value: string) => editForm && setEditForm({ ...editForm, serviceInterest: value })}
 								value={editForm?.serviceInterest || ''}
-								onChange={handleEditChange}
-								aria-label="Service Interest"
-							/>
+							>
+								<SelectTrigger className="border rounded p-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary">
+									<SelectValue placeholder="Select a service interest" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										<SelectLabel>Service Interests</SelectLabel>
+										{(serviceInterests || [])
+											.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+											.map(serviceInterest => (
+												<SelectItem
+													key={serviceInterest.id}
+													value={serviceInterest.name}
+												>
+													{serviceInterest.name}
+												</SelectItem>
+											))}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
 							<Label htmlFor="edit-leadStatus">Lead Status</Label>
-							<Input
-								name="leadStatus"
-								id="edit-leadStatus"
+							<Select
+								onValueChange={(value: string) => editForm && setEditForm({ ...editForm, leadStatus: value })}
 								value={editForm?.leadStatus || ''}
-								onChange={handleEditChange}
-								aria-label="Lead Status"
-							/>
+							>
+								<SelectTrigger className="border rounded p-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary">
+									<SelectValue placeholder="Select a lead status" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										<SelectLabel>Lead Statuses</SelectLabel>
+										{(leadStatuses || [])
+											.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+											.map(status => (
+												<SelectItem
+													key={`${status.id}-${status.name}`}
+													value={status.name}
+												>
+													{status.name}
+												</SelectItem>
+											))}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
 							<Label htmlFor="edit-potentialValue">Potential Value</Label>
 							<Input
 								name="potentialValue"

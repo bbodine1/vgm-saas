@@ -1,5 +1,15 @@
 import { db } from './drizzle'
-import { users, teams, teamMembers, activityLogs, invitations, passwordResetTokens, leads, leadSources } from './schema'
+import {
+	users,
+	teams,
+	teamMembers,
+	activityLogs,
+	invitations,
+	passwordResetTokens,
+	leads,
+	leadSources,
+	serviceInterests,
+} from './schema'
 
 async function resetDatabase() {
 	// Delete from child tables first to avoid FK constraint errors
@@ -8,6 +18,7 @@ async function resetDatabase() {
 	await db.delete(passwordResetTokens)
 	await db.delete(leads)
 	await db.delete(leadSources)
+	await db.delete(serviceInterests)
 	await db.delete(teamMembers)
 	await db.delete(teams)
 	await db.delete(users)
