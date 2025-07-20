@@ -130,7 +130,7 @@ export default function LeadsPageClient() {
 	const [editingId, setEditingId] = useState<number | null>(null)
 	const [form, setForm] = useState({
 		leadSource: '',
-		dateReceived: '',
+		dateReceived: format(new Date(), 'yyyy-MM-dd'),
 		contactName: '',
 		emailAddress: '',
 		phoneNumber: '',
@@ -360,7 +360,7 @@ export default function LeadsPageClient() {
 			await mutate()
 			setForm({
 				leadSource: '',
-				dateReceived: '',
+				dateReceived: format(new Date(), 'yyyy-MM-dd'),
 				contactName: '',
 				emailAddress: '',
 				phoneNumber: '',
@@ -752,196 +752,198 @@ export default function LeadsPageClient() {
 						<DialogDescription>Update the lead details.</DialogDescription>
 					</DialogHeader>
 					{editForm && (
-						<form
-							onSubmit={handleEditSubmit}
-							className="space-y-4"
-						>
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<div>
-									<Label htmlFor="edit-leadSource">Lead Source</Label>
-									<Select
-										name="leadSource"
-										value={editForm.leadSource}
-										onValueChange={value => setEditForm({ ...editForm, leadSource: value })}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Select lead source" />
-										</SelectTrigger>
-										<SelectContent>
-											{leadSources.map(source => (
-												<SelectItem
-													key={source.id}
-													value={source.name}
-												>
-													{source.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div>
-									<Label htmlFor="edit-dateReceived">Date Received</Label>
-									<Input
-										name="dateReceived"
-										type="date"
-										value={editForm.dateReceived}
-										onChange={handleEditChange}
-										required
-									/>
+						<>
+							{/* Date Received Meta Box */}
+							<div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+								<div className="flex items-center space-x-2">
+									<span className="text-sm font-medium text-gray-700">Date Received:</span>
+									<span className="text-sm text-gray-900">
+										{editForm.dateReceived ? format(new Date(editForm.dateReceived), 'MMMM dd, yyyy') : 'Not set'}
+									</span>
 								</div>
 							</div>
 
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<div>
-									<Label htmlFor="edit-contactName">Contact Name *</Label>
-									<Input
-										name="contactName"
-										value={editForm.contactName}
-										onChange={handleEditChange}
-										required
-									/>
-								</div>
-								<div>
-									<Label htmlFor="edit-emailAddress">Email Address</Label>
-									<Input
-										name="emailAddress"
-										type="email"
-										value={editForm.emailAddress}
-										onChange={handleEditChange}
-									/>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<div>
-									<Label htmlFor="edit-phoneNumber">Phone Number</Label>
-									<PhoneInput
-										name="phoneNumber"
-										value={editForm.phoneNumber}
-										onChange={handleEditPhoneChange}
-									/>
-								</div>
-								<div>
-									<Label htmlFor="edit-serviceInterest">Service Interest</Label>
-									<Select
-										name="serviceInterest"
-										value={editForm.serviceInterest}
-										onValueChange={value => setEditForm({ ...editForm, serviceInterest: value })}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Select service interest" />
-										</SelectTrigger>
-										<SelectContent>
-											{serviceInterests.map(service => (
-												<SelectItem
-													key={service.id}
-													value={service.name}
-												>
-													{service.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<div>
-									<Label htmlFor="edit-leadStatus">Lead Status</Label>
-									<Select
-										name="leadStatus"
-										value={editForm.leadStatus}
-										onValueChange={value => setEditForm({ ...editForm, leadStatus: value })}
-									>
-										<SelectTrigger>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{leadStatuses.map(status => (
-												<SelectItem
-													key={status.id}
-													value={status.name}
-												>
-													{status.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div>
-									<Label htmlFor="edit-potentialValue">Potential Value</Label>
-									<Input
-										name="potentialValue"
-										type="number"
-										value={editForm.potentialValue}
-										onChange={handleEditChange}
-										placeholder="0"
-									/>
-								</div>
-							</div>
-
-							<div>
-								<Label htmlFor="edit-followUpDate">Follow Up Date</Label>
-								<Popover>
-									<PopoverTrigger asChild>
-										<Button
-											variant="outline"
-											className={cn(
-												'w-full justify-start text-left font-normal',
-												!editForm.followUpDate && 'text-muted-foreground'
-											)}
+							<form
+								onSubmit={handleEditSubmit}
+								className="space-y-4"
+							>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div>
+										<Label htmlFor="edit-leadSource">Lead Source</Label>
+										<Select
+											name="leadSource"
+											value={editForm.leadSource}
+											onValueChange={value => setEditForm({ ...editForm, leadSource: value })}
 										>
-											<CalendarIcon className="mr-2 h-4 w-4" />
-											{editForm.followUpDate ? (
-												format(new Date(editForm.followUpDate), 'PPP')
-											) : (
-												<span>Pick a date</span>
-											)}
-										</Button>
-									</PopoverTrigger>
-									<PopoverContent
-										className="w-auto p-0"
-										align="start"
-									>
-										<Calendar
-											mode="single"
-											selected={editForm.followUpDate ? new Date(editForm.followUpDate) : undefined}
-											onSelect={date =>
-												setEditForm({ ...editForm, followUpDate: date ? format(date, 'yyyy-MM-dd') : '' })
-											}
-											initialFocus
+											<SelectTrigger>
+												<SelectValue placeholder="Select lead source" />
+											</SelectTrigger>
+											<SelectContent>
+												{leadSources.map(source => (
+													<SelectItem
+														key={source.id}
+														value={source.name}
+													>
+														{source.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+								</div>
+
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div>
+										<Label htmlFor="edit-contactName">Contact Name *</Label>
+										<Input
+											name="contactName"
+											value={editForm.contactName}
+											onChange={handleEditChange}
+											required
 										/>
-									</PopoverContent>
-								</Popover>
-							</div>
+									</div>
+									<div>
+										<Label htmlFor="edit-emailAddress">Email Address</Label>
+										<Input
+											name="emailAddress"
+											type="email"
+											value={editForm.emailAddress}
+											onChange={handleEditChange}
+										/>
+									</div>
+								</div>
 
-							<div>
-								<Label htmlFor="edit-notes">Notes</Label>
-								<Textarea
-									name="notes"
-									value={editForm.notes}
-									onChange={handleEditChange}
-									rows={3}
-								/>
-							</div>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div>
+										<Label htmlFor="edit-phoneNumber">Phone Number</Label>
+										<PhoneInput
+											name="phoneNumber"
+											value={editForm.phoneNumber}
+											onChange={handleEditPhoneChange}
+										/>
+									</div>
+									<div>
+										<Label htmlFor="edit-serviceInterest">Service Interest</Label>
+										<Select
+											name="serviceInterest"
+											value={editForm.serviceInterest}
+											onValueChange={value => setEditForm({ ...editForm, serviceInterest: value })}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select service interest" />
+											</SelectTrigger>
+											<SelectContent>
+												{serviceInterests.map(service => (
+													<SelectItem
+														key={service.id}
+														value={service.name}
+													>
+														{service.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+								</div>
 
-							<DialogFooter>
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => setEditDialogOpen(false)}
-								>
-									Cancel
-								</Button>
-								<Button
-									type="submit"
-									disabled={loading}
-									className="bg-orange-500 hover:bg-orange-600 text-white"
-								>
-									{loading ? 'Saving...' : 'Save Changes'}
-								</Button>
-							</DialogFooter>
-						</form>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div>
+										<Label htmlFor="edit-leadStatus">Lead Status</Label>
+										<Select
+											name="leadStatus"
+											value={editForm.leadStatus}
+											onValueChange={value => setEditForm({ ...editForm, leadStatus: value })}
+										>
+											<SelectTrigger>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{leadStatuses.map(status => (
+													<SelectItem
+														key={status.id}
+														value={status.name}
+													>
+														{status.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+									<div>
+										<Label htmlFor="edit-potentialValue">Potential Value</Label>
+										<Input
+											name="potentialValue"
+											type="number"
+											value={editForm.potentialValue}
+											onChange={handleEditChange}
+											placeholder="0"
+										/>
+									</div>
+								</div>
+
+								<div>
+									<Label htmlFor="edit-followUpDate">Follow Up Date</Label>
+									<Popover>
+										<PopoverTrigger asChild>
+											<Button
+												variant="outline"
+												className={cn(
+													'w-full justify-start text-left font-normal',
+													!editForm.followUpDate && 'text-muted-foreground'
+												)}
+											>
+												<CalendarIcon className="mr-2 h-4 w-4" />
+												{editForm.followUpDate ? (
+													format(new Date(editForm.followUpDate), 'PPP')
+												) : (
+													<span>Pick a date</span>
+												)}
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent
+											className="w-auto p-0"
+											align="start"
+										>
+											<Calendar
+												mode="single"
+												selected={editForm.followUpDate ? new Date(editForm.followUpDate) : undefined}
+												onSelect={date =>
+													setEditForm({ ...editForm, followUpDate: date ? format(date, 'yyyy-MM-dd') : '' })
+												}
+												initialFocus
+											/>
+										</PopoverContent>
+									</Popover>
+								</div>
+
+								<div>
+									<Label htmlFor="edit-notes">Notes</Label>
+									<Textarea
+										name="notes"
+										value={editForm.notes}
+										onChange={handleEditChange}
+										rows={3}
+									/>
+								</div>
+
+								<DialogFooter>
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => setEditDialogOpen(false)}
+									>
+										Cancel
+									</Button>
+									<Button
+										type="submit"
+										disabled={loading}
+										className="bg-orange-500 hover:bg-orange-600 text-white"
+									>
+										{loading ? 'Saving...' : 'Save Changes'}
+									</Button>
+								</DialogFooter>
+							</form>
+						</>
 					)}
 				</DialogContent>
 			</Dialog>
