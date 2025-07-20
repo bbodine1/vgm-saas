@@ -34,11 +34,12 @@ import {
 	getCoreRowModel,
 	getPaginationRowModel,
 	getSortedRowModel,
+	getFilteredRowModel,
 	SortingState,
 	useReactTable,
 } from '@tanstack/react-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon } from 'lucide-react'
+import { MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, Search } from 'lucide-react'
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -143,6 +144,7 @@ export default function LeadsPageClient() {
 	const [editForm, setEditForm] = useState<EditFormData | null>(null)
 	const [editDialogOpen, setEditDialogOpen] = useState(false)
 	const [sorting, setSorting] = useState<SortingState>([])
+	const [globalFilter, setGlobalFilter] = useState('')
 	const [followUpDate, setFollowUpDate] = useState<Date | undefined>(undefined)
 	const [originalLead, setOriginalLead] = useState<Lead | null>(null)
 
@@ -243,6 +245,21 @@ export default function LeadsPageClient() {
 				},
 			},
 			{
+				accessorKey: 'notes',
+				header: ({ column }) => <SortableHeader column={column}>Notes</SortableHeader>,
+				cell: ({ row }) => {
+					const notes = row.getValue('notes') as string
+					return (
+						<div
+							className="max-w-xs truncate"
+							title={notes || ''}
+						>
+							{notes || '-'}
+						</div>
+					)
+				},
+			},
+			{
 				id: 'actions',
 				enableHiding: false,
 				cell: ({ row }) => {
@@ -290,12 +307,16 @@ export default function LeadsPageClient() {
 		data: leads,
 		columns,
 		onSortingChange: setSorting,
+		onGlobalFilterChange: setGlobalFilter,
 		getCoreRowModel: getCoreRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
+		getFilteredRowModel: getFilteredRowModel(),
 		state: {
 			sorting,
+			globalFilter,
 		},
+		globalFilterFn: 'includesString',
 	})
 
 	const handleBulkDelete = async () => {
@@ -674,6 +695,17 @@ export default function LeadsPageClient() {
 									</span>
 								</div>
 							)}
+						</div>
+						<div className="flex items-center space-x-2">
+							<div className="relative">
+								<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+								<Input
+									placeholder="Search leads, notes, contacts..."
+									value={globalFilter ?? ''}
+									onChange={e => setGlobalFilter(e.target.value)}
+									className="pl-10 w-64"
+								/>
+							</div>
 						</div>
 					</div>
 					<Table>
