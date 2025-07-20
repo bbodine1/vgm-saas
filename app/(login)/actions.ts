@@ -360,7 +360,7 @@ export const deleteAccount = validatedActionWithUser(deleteAccountSchema, async 
 
 	await db.delete(teamMembers).where(eq(teamMembers.userId, user.id))
 	;(await cookies()).delete('session')
-	redirect('/sign-in')
+	redirect('/')
 })
 
 const updateAccountSchema = z.object({

@@ -9,6 +9,7 @@ import {
 	leads,
 	leadSources,
 	serviceInterests,
+	leadStatuses,
 } from './schema'
 
 async function resetDatabase() {
@@ -19,6 +20,7 @@ async function resetDatabase() {
 	await db.delete(leads)
 	await db.delete(leadSources)
 	await db.delete(serviceInterests)
+	await db.delete(leadStatuses)
 	await db.delete(teamMembers)
 	await db.delete(teams)
 	await db.delete(users)

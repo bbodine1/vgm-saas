@@ -21,6 +21,28 @@ interface PhoneInputProps {
 	name?: string
 }
 
+// Function to clean phone number to E.164 format
+function cleanPhoneNumber(phoneNumber: string | undefined): string | undefined {
+	if (!phoneNumber) return undefined
+
+	// Remove all non-digit characters except the leading +
+	let cleaned = phoneNumber.replace(/[^\d+]/g, '')
+
+	// If it doesn't start with +, assume it's a US number and add +1
+	if (!cleaned.startsWith('+')) {
+		cleaned = '+1' + cleaned
+	}
+
+	// Basic validation - should be at least 10 digits after the +
+	const digitsAfterPlus = cleaned.replace(/\D/g, '').length
+	if (digitsAfterPlus >= 10) {
+		return cleaned
+	}
+
+	// If validation fails, return undefined
+	return undefined
+}
+
 export function PhoneInput({
 	value,
 	onChange,
@@ -31,6 +53,9 @@ export function PhoneInput({
 	id,
 	name,
 }: PhoneInputProps) {
+	// Clean the phone number to E.164 format before passing to the component
+	const cleanedValue = cleanPhoneNumber(value)
+
 	const handleChange = (phoneValue: string | undefined) => {
 		onChange?.(phoneValue || undefined)
 	}
@@ -39,7 +64,7 @@ export function PhoneInput({
 		<PhoneInputWithCountry
 			international
 			defaultCountry="US"
-			value={value}
+			value={cleanedValue}
 			onChange={handleChange}
 			placeholder={placeholder}
 			disabled={disabled}

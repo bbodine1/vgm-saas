@@ -168,7 +168,8 @@ async function seed() {
 
 		// Add default lead sources for this org
 		const defaultSources = ['Website Form', 'Social Media', 'Referral', 'Email Campaign', 'Cold Call', 'Trade Show']
-		for (const sourceName of defaultSources) {
+		for (let i = 0; i < defaultSources.length; i++) {
+			const sourceName = defaultSources[i]
 			// Check if lead source already exists for this team
 			const existing = await db
 				.select()
@@ -180,6 +181,7 @@ async function seed() {
 				await db.insert(leadSources).values({
 					name: sourceName,
 					teamId: team.id,
+					order: i + 1,
 					createdAt: new Date(),
 					updatedAt: new Date(),
 				})
@@ -195,7 +197,8 @@ async function seed() {
 			'Marketing',
 			'Support',
 		]
-		for (const serviceName of defaultServiceInterests) {
+		for (let i = 0; i < defaultServiceInterests.length; i++) {
+			const serviceName = defaultServiceInterests[i]
 			// Check if service interest already exists for this team
 			const existing = await db
 				.select()
@@ -207,6 +210,7 @@ async function seed() {
 				await db.insert(serviceInterests).values({
 					name: serviceName,
 					teamId: team.id,
+					order: i + 1,
 					createdAt: new Date(),
 					updatedAt: new Date(),
 				})
@@ -215,7 +219,8 @@ async function seed() {
 
 		// Add default lead statuses for this org
 		const defaultLeadStatuses = ['New', 'Qualified', 'Proposal Sent', 'Negotiating', 'Closed Won', 'Closed Lost']
-		for (const statusName of defaultLeadStatuses) {
+		for (let i = 0; i < defaultLeadStatuses.length; i++) {
+			const statusName = defaultLeadStatuses[i]
 			// Check if lead status already exists for this team
 			const existing = await db
 				.select()
@@ -227,6 +232,7 @@ async function seed() {
 				await db.insert(leadStatuses).values({
 					name: statusName,
 					teamId: team.id,
+					order: i + 1,
 					createdAt: new Date(),
 					updatedAt: new Date(),
 				})

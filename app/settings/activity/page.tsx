@@ -13,7 +13,8 @@ import {
 	type LucideIcon,
 } from 'lucide-react'
 import { ActivityType } from '@/lib/db/schema'
-import { getActivityLogs } from '@/lib/db/queries'
+import { getActivityLogs, getUser } from '@/lib/db/queries'
+import { redirect } from 'next/navigation'
 
 const iconMap: Record<ActivityType, LucideIcon> = {
 	[ActivityType.SIGN_UP]: UserPlus,
@@ -73,6 +74,12 @@ function formatAction(action: ActivityType, ipAddress?: string): string {
 }
 
 export default async function ActivityPage() {
+	const user = await getUser()
+
+	if (!user) {
+		redirect('/')
+	}
+
 	const logs = await getActivityLogs()
 
 	return (

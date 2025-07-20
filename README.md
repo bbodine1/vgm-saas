@@ -6,11 +6,13 @@ A comprehensive SaaS starter template built with **Next.js** featuring authentic
 
 - **Authentication & Authorization**: Email/password auth with JWT sessions and role-based access control
 - **Team Management**: Multi-tenant organizations with member invitations and role management
-- **Lead Management**: CRUD operations for leads with team-based data isolation, customizable lead sources and service interests
+- **Lead Management**: Advanced CRUD operations with bulk delete, sorting, pagination, and customizable reference data
 - **Payment Integration**: Stripe Checkout and Customer Portal for subscription management
 - **Activity Logging**: Comprehensive audit trail for all user actions
 - **Modern UI**: Built with shadcn/ui components and Tailwind CSS
 - **Database**: PostgreSQL with Drizzle ORM for type-safe database operations
+- **Phone Validation**: E.164 formatting for international phone numbers
+- **Drag & Drop**: Sortable reference data (lead sources, service interests, lead statuses)
 
 ## Tech Stack
 
@@ -186,6 +188,15 @@ Each organization comes with 6 sample leads marked as "TEST" for easy identifica
 
 ## Lead Management
 
+### Core Features
+
+- **CRUD Operations**: Full create, read, update, and delete functionality for leads
+- **Bulk Operations**: Select and delete multiple leads at once with confirmation
+- **Row Selection**: Click on any row to edit lead details in a modal dialog
+- **Sortable Columns**: Click column headers to sort by any field
+- **Pagination**: Navigate through large datasets efficiently
+- **Search & Filter**: Find leads quickly with built-in search functionality
+
 ### Lead Sources
 
 - **Customizable**: Each team can create and manage their own lead sources
@@ -203,15 +214,26 @@ Each organization comes with 6 sample leads marked as "TEST" for easy identifica
 ### Lead Statuses
 
 - **Customizable**: Each team can create and manage their own lead statuses
+- **Sortable**: Drag-and-drop reordering in the settings
 - **Team-scoped**: Lead statuses are isolated to each organization
 - **Default statuses**: New, Qualified, Proposal Sent, Negotiating, Closed Won, Closed Lost
 
 ### Lead Fields
 
-- **Contact Information**: Name, email, phone number
+- **Contact Information**: Name, email, phone number with E.164 validation
 - **Lead Details**: Source, service interest, status, potential value
-- **Follow-up**: Follow-up date and notes
+- **Follow-up**: Follow-up date picker and notes field
 - **Phone Validation**: Automatic E.164 formatting for international phone numbers
+- **Date Handling**: Proper date formatting and validation
+
+### User Interface
+
+- **Modern Table**: React Table with sorting, pagination, and selection
+- **Inline Actions**: Quick edit and delete actions in dropdown menus
+- **Bulk Delete**: Select multiple leads and delete with confirmation
+- **Selection Feedback**: Real-time count of selected leads
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Loading States**: Proper loading indicators for all operations
 
 ## Stripe Integration
 
@@ -260,20 +282,46 @@ Ensure these are set in production:
 ```
 ├── app/                    # Next.js App Router pages
 │   ├── (dashboard)/       # Protected dashboard routes
+│   │   └── dashboard/     # Main dashboard with leads management
 │   ├── (login)/          # Authentication pages
 │   ├── api/              # API routes
+│   │   ├── leads/        # Lead CRUD operations
 │   │   ├── lead-sources/  # Lead sources management
 │   │   ├── service-interests/ # Service interests management
 │   │   ├── lead-statuses/  # Lead statuses management
+│   │   ├── teams/        # Team management
+│   │   ├── user/         # User management
 │   │   └── stripe/       # Stripe integration
 │   └── settings/         # User settings pages
 ├── components/           # Reusable UI components
+│   ├── ui/              # shadcn/ui components
+│   └── layout/          # Layout components
 ├── lib/                  # Utility libraries
 │   ├── auth/            # Authentication logic
-│   ├── db/              # Database configuration
-│   └── payments/        # Stripe integration
+│   ├── db/              # Database configuration and migrations
+│   ├── payments/        # Stripe integration
+│   └── context/         # React context providers
 └── middleware.ts        # Route protection
 ```
+
+## Recent Updates
+
+### Lead Management Enhancements (Latest)
+
+- **Bulk Delete Functionality**: Select multiple leads and delete them with confirmation
+- **Improved Row Selection**: Click on any table row to edit lead details
+- **Enhanced UI**: Compact selection feedback in table header
+- **Phone Number Validation**: Automatic E.164 formatting for international phone numbers
+- **Better Error Handling**: Comprehensive error handling with user feedback
+- **Responsive Design**: Improved mobile experience
+- **Database Optimization**: Updated seed script with proper ordering for reference data
+
+### Technical Improvements
+
+- **React Table Integration**: Advanced table functionality with sorting, pagination, and selection
+- **Type Safety**: Enhanced TypeScript types for better development experience
+- **Performance**: Optimized database queries and state management
+- **Code Quality**: Improved code organization and error handling
 
 ## Contributing
 
